@@ -5,31 +5,43 @@ const SUPABASE_URL = 'https://cdnqqrjbdhoglvlqbxoq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbnFxcmpiZGhvZ2x2bHFieG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDQ1NDIsImV4cCI6MjA5NjU4MDU0Mn0.dHQbkEIJe5L4bfyJqZkJkXTPX0Abot4GBw7_4O3eNwk';
 const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ==========================================
-// VARIABEL GLOBAL & OBJEK GRAFIK
-// ==========================================
 let dataMaster = []; 
 let filterProvinsiAktif = null;
 
 let chartProvInstance = null;
 let chartUmurInstance = null;
 let chartJabatanInstance = null;
+let chartGenerasiInstance = null;
 
-// ==========================================
-// FUNGSI UTAMA: PENARIKAN & PEMROSESAN DATA
-// ==========================================
+// Menggunakan Looping untuk menembus batas maksimal 1000 baris API Supabase
 async function inisialisasiDasbor() {
     try {
-        console.log("Menarik data master...");
-        // Tarik data dengan limit besar untuk proses agregasi di klien
-        const { data, error } = await mySupabase
-            .from('data_aktif_pkb')
-            .select('nip, nama_lengkap, provinsi, jenis_pegawai, jabatan, tanggal_lahir, tanggal_pensiun')
-            .limit(20000); 
+        console.log("Menarik data master (Mungkin memakan waktu beberapa detik)...");
+        let allData = [];
+        let step = 1000;
+        let from = 0;
+        let hasMore = true;
 
-        if (error) throw error;
-        dataMaster = data;
+        while (hasMore) {
+            const { data, error } = await mySupabase
+                .from('data_aktif_pkb')
+                .select('nip, nama_lengkap, provinsi, jenis_pegawai, jabatan, tanggal_lahir, tanggal_pensiun')
+                .range(from, from + step - 1);
+                
+            if (error) { console.error(error); break; }
+            
+            allData = allData.concat(data);
+            
+            // Jika data yang ditarik kurang dari 1000, berarti itu adalah antrean terakhir
+            if (data.length < step) {
+                hasMore = false;
+            } else {
+                from += step;
+            }
+        }
         
+        dataMaster = allData;
+        console.log("Total Data Terkumpul:", dataMaster.length);
         renderDasbor();
     } catch (error) {
         console.error("Gagal menarik data:", error);
@@ -37,31 +49,33 @@ async function inisialisasiDasbor() {
 }
 
 function renderDasbor() {
-    // 1. Terapkan Filter (Jika Ada)
     let dataAktif = dataMaster;
+    
+    // Label Dinamis & Filter
+    const labelCakupan = document.getElementById('label-cakupan');
+    const btnReset = document.getElementById('btn-reset-filter');
+
     if (filterProvinsiAktif) {
         dataAktif = dataMaster.filter(d => d.provinsi === filterProvinsiAktif);
-        document.getElementById('filter-notif').style.display = 'flex';
-        document.getElementById('nama-filter-prov').innerText = filterProvinsiAktif;
+        labelCakupan.innerHTML = `Menampilkan Data: <span style="color:#0056b3;">PROVINSI ${filterProvinsiAktif}</span>`;
+        btnReset.style.display = 'block';
     } else {
-        document.getElementById('filter-notif').style.display = 'none';
+        labelCakupan.innerText = "Menampilkan Data: NASIONAL";
+        btnReset.style.display = 'none';
     }
 
-    // 2. Kalkulasi Tanggal (Konteks Tahun 2026)
     const bulanIni = '2026-06';
     const tahunIni = '2026';
 
-    // 3. Hitung KPI Atas
     let kpiPns = 0, kpiPppk = 0, kpiPensiunBln = 0, kpiPensiunThn = 0;
     
-    // Objek untuk Agregasi Grafik
     let provCount = {};
     let umurCount = { '< 30': 0, '30-39': 0, '40-49': 0, '50-59': 0, '60+': 0 };
+    let generasiCount = { 'Gen Z': 0, 'Milenial': 0, 'Gen X': 0, 'Baby Boomer': 0 };
     let jabatanCount = {};
     let dataPensiunTabel = [];
 
     dataAktif.forEach(row => {
-        // --- Agregasi KPI
         if (row.jenis_pegawai === 'PNS') kpiPns++;
         if (row.jenis_pegawai === 'PPPK') kpiPppk++;
         
@@ -73,88 +87,81 @@ function renderDasbor() {
             }
         }
 
-        // --- Agregasi Provinsi
-        if (row.provinsi) {
-            provCount[row.provinsi] = (provCount[row.provinsi] || 0) + 1;
-        }
+        if (row.provinsi) provCount[row.provinsi] = (provCount[row.provinsi] || 0) + 1;
+        if (row.jabatan) jabatanCount[row.jabatan] = (jabatanCount[row.jabatan] || 0) + 1;
 
-        // --- Agregasi Jabatan
-        if (row.jabatan) {
-            jabatanCount[row.jabatan] = (jabatanCount[row.jabatan] || 0) + 1;
-        }
-
-        // --- Agregasi Umur
         if (row.tanggal_lahir) {
             const tahunLahir = parseInt(row.tanggal_lahir.split('-')[0]);
             const usia = 2026 - tahunLahir;
+            
+            // Agregasi Umur
             if (usia < 30) umurCount['< 30']++;
-            else if (usia >= 30 && usia <= 39) umurCount['30-39']++;
-            else if (usia >= 40 && usia <= 49) umurCount['40-49']++;
-            else if (usia >= 50 && usia <= 59) umurCount['50-59']++;
+            else if (usia <= 39) umurCount['30-39']++;
+            else if (usia <= 49) umurCount['40-49']++;
+            else if (usia <= 59) umurCount['50-59']++;
             else umurCount['60+']++;
+
+            // Agregasi Generasi
+            if (tahunLahir >= 1997) generasiCount['Gen Z']++;
+            else if (tahunLahir >= 1981) generasiCount['Milenial']++;
+            else if (tahunLahir >= 1965) generasiCount['Gen X']++;
+            else generasiCount['Baby Boomer']++;
         }
     });
 
-    // 4. Perbarui Teks KPI
     document.getElementById('kpi-total').innerText = dataAktif.length;
     document.getElementById('kpi-pns').innerText = kpiPns;
     document.getElementById('kpi-pppk').innerText = kpiPppk;
     document.getElementById('kpi-pensiun-bulan').innerText = kpiPensiunBln;
     document.getElementById('kpi-pensiun-tahun').innerText = kpiPensiunThn;
 
-    // 5. Urutkan dan Gambar Tabel Pensiun Terdekat
     dataPensiunTabel.sort((a, b) => new Date(a.tanggal_pensiun) - new Date(b.tanggal_pensiun));
     const tbodyPensiun = document.querySelector('#tabelPensiun tbody');
     tbodyPensiun.innerHTML = '';
     
-    const batasTabel = dataPensiunTabel.slice(0, 50); // Tampilkan maks 50 data agar tidak berat
-    batasTabel.forEach(p => {
+    dataPensiunTabel.slice(0, 50).forEach(p => {
         let tr = document.createElement('tr');
-        tr.innerHTML = `<td>${p.nama_lengkap}</td><td>${p.provinsi}</td><td>${p.tanggal_pensiun}</td>`;
+        tr.innerHTML = `<td>${p.nama_lengkap}</td><td>${p.provinsi}</td><td>${p.jabatan}</td><td style="font-weight:bold; color:#dc3545;">${p.tanggal_pensiun}</td>`;
         tbodyPensiun.appendChild(tr);
     });
 
-    // 6. Gambar Ulang Grafik-Grafik
     gambarChartProvinsi(provCount);
     gambarChartUmur(umurCount);
     gambarChartJabatan(jabatanCount);
+    gambarChartGenerasi(generasiCount);
 }
 
-// ==========================================
-// FUNGSI PEMBUATAN GRAFIK (CHART.JS)
-// ==========================================
 function gambarChartProvinsi(provData) {
     const ctx = document.getElementById('chartProvinsi').getContext('2d');
     if (chartProvInstance) chartProvInstance.destroy();
 
-    // Sortir Provinsi dari terbesar ke terkecil
     const sortedProv = Object.entries(provData).sort((a, b) => b[1] - a[1]);
     const labels = sortedProv.map(item => item[0]);
     const values = sortedProv.map(item => item[1]);
 
     chartProvInstance = new Chart(ctx, {
-        type: 'bar',
+        type: 'bar', // Mengubah tipe menjadi grafik batang horizontal untuk visualisasi peta wilayah yang lebih baik
         data: {
             labels: labels,
             datasets: [{
-                label: 'Jumlah Pegawai',
+                label: 'Total Pegawai',
                 data: values,
                 backgroundColor: '#007bff',
                 borderRadius: 4
             }]
         },
         options: {
+            indexAxis: 'y', // KUNCI RAHASIA: Ini memutar grafik agar nama 30+ provinsi bisa terbaca sempurna
             responsive: true,
             maintainAspectRatio: false,
             onClick: (e, activeElements) => {
                 if (activeElements.length > 0) {
                     const dataIndex = activeElements[0].index;
                     filterProvinsiAktif = labels[dataIndex];
-                    renderDasbor(); // Redraw saat batang diklik
+                    renderDasbor();
                 }
             },
-            plugins: { legend: { display: false } },
-            scales: { x: { display: false } } // Sembunyikan label bawah jika terlalu banyak
+            plugins: { legend: { display: false } }
         }
     });
 }
@@ -163,14 +170,16 @@ function gambarChartUmur(umurData) {
     const ctx = document.getElementById('chartUmur').getContext('2d');
     if (chartUmurInstance) chartUmurInstance.destroy();
 
+    // Memberikan warna berbeda pada tiap batang umur
+    const warnaBar = ['#007bff', '#28a745', '#ffc107', '#fd7e14', '#dc3545'];
+
     chartUmurInstance = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: Object.keys(umurData),
             datasets: [{
-                label: 'Jumlah Pegawai',
                 data: Object.values(umurData),
-                backgroundColor: '#28a745',
+                backgroundColor: warnaBar,
                 borderRadius: 4
             }]
         },
@@ -178,11 +187,27 @@ function gambarChartUmur(umurData) {
     });
 }
 
+function gambarChartGenerasi(genData) {
+    const ctx = document.getElementById('chartGenerasi').getContext('2d');
+    if (chartGenerasiInstance) chartGenerasiInstance.destroy();
+
+    chartGenerasiInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(genData),
+            datasets: [{
+                data: Object.values(genData),
+                backgroundColor: ['#6f42c1', '#17a2b8', '#fd7e14', '#e83e8c']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+}
+
 function gambarChartJabatan(jabatanData) {
     const ctx = document.getElementById('chartJabatan').getContext('2d');
     if (chartJabatanInstance) chartJabatanInstance.destroy();
 
-    // Sortir Jabatan
     const sortedJabatan = Object.entries(jabatanData).sort((a, b) => b[1] - a[1]);
 
     chartJabatanInstance = new Chart(ctx, {
@@ -191,16 +216,13 @@ function gambarChartJabatan(jabatanData) {
             labels: sortedJabatan.map(item => item[0]),
             datasets: [{
                 data: sortedJabatan.map(item => item[1]),
-                backgroundColor: ['#007bff', '#17a2b8', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#e83e8c', '#fd7e14']
+                backgroundColor: ['#007bff', '#17a2b8', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#e83e8c', '#fd7e14', '#20c997', '#6c757d']
             }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } } }
     });
 }
 
-// ==========================================
-// FUNGSI NAVIGASI & LOGIN
-// ==========================================
 window.resetFilter = function() {
     filterProvinsiAktif = null;
     renderDasbor();
@@ -223,10 +245,8 @@ window.kembaliKeDasbor = function() {
 window.prosesLogin = async function() {
     const inputId = document.getElementById('inputIdentitas').value;
     const pesanError = document.getElementById('pesan-error');
-    
     if(!inputId) return;
     pesanError.style.display = 'none';
-
     try {
         const { data, error } = await mySupabase.from('data_aktif_pkb').select('*').eq('nip', inputId).single();
         if (error || !data) {
@@ -237,19 +257,11 @@ window.prosesLogin = async function() {
             document.getElementById('profil-nip').innerText = data.nip;
             document.getElementById('profil-jabatan').innerText = data.jabatan;
             document.getElementById('profil-wilayah').innerText = data.kabupaten + ", " + data.provinsi;
-            
             document.getElementById('halaman-login').style.display = 'none';
             document.getElementById('halaman-profil').style.display = 'block';
         }
-    } catch(err) {
-        console.error(err);
-    }
+    } catch(err) {}
 };
 
-window.keluar = function() {
-    document.getElementById('inputIdentitas').value = '';
-    kembaliKeDasbor();
-};
-
-// Pemicu awal saat halaman dimuat
+window.keluar = function() { document.getElementById('inputIdentitas').value = ''; kembaliKeDasbor(); };
 window.addEventListener('DOMContentLoaded', inisialisasiDasbor);
