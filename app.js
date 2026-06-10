@@ -15,9 +15,17 @@ let chartGenerasiInstance = null;
 let chartPendidikanInstance = null;
 let chartGolonganInstance = null;
 
-// Fungsi helper pemformatan angka ribuan (standar Indonesia)
+// Helper: Format Angka Ribuan
 function formatAngka(angka) {
     return Number(angka).toLocaleString('id-ID');
+}
+
+// Helper REVISI: Mengubah format yyyy-mm-dd menjadi dd-mm-yyyy untuk tampilan layar
+function formatTanggalIndo(tglStr) {
+    if (!tglStr) return '-';
+    const bagian = tglStr.split('-');
+    if (bagian.length !== 3) return tglStr; // kembalikan apa adanya jika format salah
+    return `${bagian[2]}-${bagian[1]}-${bagian[0]}`;
 }
 
 async function inisialisasiDasbor() {
@@ -29,7 +37,6 @@ async function inisialisasiDasbor() {
         let hasMore = true;
 
         while (hasMore) {
-            // PERBAIKAN: Menambahkan 'golongan' dan 'pendidikan_akhir' ke query
             const { data, error } = await mySupabase
                 .from('data_aktif_pkb')
                 .select('nip, nama_lengkap, provinsi, jenis_pegawai, jenis_kelamin, jabatan, golongan, pendidikan_akhir, tanggal_lahir, tanggal_pensiun')
@@ -102,8 +109,6 @@ function renderDasbor() {
 
         if (row.provinsi) provCount[row.provinsi] = (provCount[row.provinsi] || 0) + 1;
         if (row.jabatan) jabatanCount[row.jabatan] = (jabatanCount[row.jabatan] || 0) + 1;
-        
-        // Agregasi Pendidikan & Golongan
         if (row.pendidikan_akhir) pendidikanCount[row.pendidikan_akhir] = (pendidikanCount[row.pendidikan_akhir] || 0) + 1;
         if (row.golongan) golonganCount[row.golongan] = (golonganCount[row.golongan] || 0) + 1;
 
@@ -124,7 +129,6 @@ function renderDasbor() {
         }
     });
 
-    // Menerapkan format angka ribuan pada KPI Cards
     document.getElementById('kpi-total').innerText = formatAngka(dataAktif.length);
     document.getElementById('kpi-pns').innerText = formatAngka(kpiPns);
     document.getElementById('kpi-pppk').innerText = formatAngka(kpiPppk);
@@ -139,7 +143,9 @@ function renderDasbor() {
     
     dataPensiunTabel.slice(0, 50).forEach(p => {
         let tr = document.createElement('tr');
-        tr.innerHTML = `<td>${p.nama_lengkap}</td><td>${p.provinsi}</td><td>${p.jabatan}</td><td style="font-weight:bold; color:#dc3545;">${p.tanggal_pensiun}</td>`;
+        // REVISI: Menggunakan fungsi formatTanggalIndo() untuk nilai dalam tabel
+        const tanggalFormatted = formatTanggalIndo(p.tanggal_pensiun);
+        tr.innerHTML = `<td>${p.nama_lengkap}</td><td>${p.provinsi}</td><td>${p.jabatan}</td><td style="font-weight:bold; color:#dc3545;">${tanggalFormatted}</td>`;
         tbodyPensiun.appendChild(tr);
     });
 
@@ -268,7 +274,6 @@ function gambarChartGolongan(golonganData) {
     const ctx = document.getElementById('chartGolongan').getContext('2d');
     if (chartGolonganInstance) chartGolonganInstance.destroy();
 
-    // Mengurutkan Golongan berdasarkan abjad (misal: I/a, II/a, III/a, dst)
     const sortedData = Object.entries(golonganData).sort((a, b) => a[0].localeCompare(b[0]));
 
     chartGolonganInstance = new Chart(ctx, {
