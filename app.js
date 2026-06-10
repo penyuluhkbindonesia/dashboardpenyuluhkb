@@ -22,7 +22,6 @@ async function inisialisasiDasbor() {
         let hasMore = true;
 
         while (hasMore) {
-            // PERBAIKAN: Menambahkan 'jenis_kelamin' ke dalam data yang ditarik
             const { data, error } = await mySupabase
                 .from('data_aktif_pkb')
                 .select('nip, nama_lengkap, provinsi, jenis_pegawai, jenis_kelamin, jabatan, tanggal_lahir, tanggal_pensiun')
@@ -43,6 +42,8 @@ async function inisialisasiDasbor() {
         renderDasbor();
     } catch (error) {
         console.error("Gagal menarik data:", error);
+        // Tetap sembunyikan loading jika gagal agar tidak blank
+        document.getElementById('loading-screen').style.display = 'none'; 
     }
 }
 
@@ -52,7 +53,6 @@ function renderDasbor() {
     const labelCakupan = document.getElementById('label-cakupan');
     const btnReset = document.getElementById('btn-reset-filter');
 
-    // PERBAIKAN: Label Teks
     if (filterProvinsiAktif) {
         dataAktif = dataMaster.filter(d => d.provinsi === filterProvinsiAktif);
         labelCakupan.innerHTML = `Data PKB/PLKB : <span style="color:#0056b3;">PROVINSI ${filterProvinsiAktif}</span>`;
@@ -65,7 +65,6 @@ function renderDasbor() {
     const bulanIni = '2026-06';
     const tahunIni = '2026';
 
-    // PERBAIKAN: Tambah Variabel Gender
     let kpiPns = 0, kpiPppk = 0, kpiPensiunBln = 0, kpiPensiunThn = 0, kpiPria = 0, kpiWanita = 0;
     
     let provCount = {};
@@ -78,7 +77,6 @@ function renderDasbor() {
         if (row.jenis_pegawai === 'PNS') kpiPns++;
         if (row.jenis_pegawai === 'PPPK') kpiPppk++;
         
-        // PERBAIKAN: Hitung Gender
         if (row.jenis_kelamin) {
             const jk = row.jenis_kelamin.toLowerCase();
             if (jk.includes('laki')) kpiPria++;
@@ -113,7 +111,6 @@ function renderDasbor() {
         }
     });
 
-    // PERBAIKAN: Cetak Gender ke Layar
     document.getElementById('kpi-total').innerText = dataAktif.length;
     document.getElementById('kpi-pns').innerText = kpiPns;
     document.getElementById('kpi-pppk').innerText = kpiPppk;
@@ -136,6 +133,9 @@ function renderDasbor() {
     gambarChartUmur(umurCount);
     gambarChartJabatan(jabatanCount);
     gambarChartGenerasi(generasiCount);
+
+    // MENGHILANGKAN LAYAR LOADING SETELAH RENDER SELESAI
+    document.getElementById('loading-screen').style.display = 'none';
 }
 
 function gambarChartProvinsi(provData) {
