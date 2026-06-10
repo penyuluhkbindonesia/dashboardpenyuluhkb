@@ -1,9 +1,7 @@
-// 1. Konfigurasi Supabase
+// 1. Konfigurasi Supabase (WAJIB DIISI)
 const SUPABASE_URL = 'https://cdnqqrjbdhoglvlqbxoq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbnFxcmpiZGhvZ2x2bHFieG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDQ1NDIsImV4cCI6MjA5NjU4MDU0Mn0.dHQbkEIJe5L4bfyJqZkJkXTPX0Abot4GBw7_4O3eNwk';
 
-// Perbaikan Error "Redeclaration": Gunakan let atau hindari nama variabel global yang konflik
-// Kita menggunakan nama mySupabase untuk klien lokal agar tidak bentrok dengan objek global window.supabase
 const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 2. Deklarasi Elemen Halaman
@@ -12,47 +10,44 @@ const halLogin = document.getElementById('halaman-login');
 const halProfil = document.getElementById('halaman-profil');
 const tombolNavLogin = document.querySelector('.btn-login-nav');
 
-// 3. Fungsi Memuat Visual Data (Dasbor Publik)
+// 3. Fungsi Memuat Visual Data
 async function muatRingkasanData() {
     try {
-        console.log("Memulai penarikan data dari Supabase...");
+        console.log("Memulai penarikan data metrik dari Supabase...");
         
-        // Hitung Total Semua Pegawai
-        const { count: totalSemua, error: errSemua } = await mySupabase
-            .from('data_aktif_pkb')
-            .select('*', { count: 'exact', head: true });
-            
-        if (errSemua) throw errSemua;
+        // 1. Hitung Total Semua
+        const { count: totalSemua } = await mySupabase.from('data_aktif_pkb').select('*', { count: 'exact', head: true });
+        
+        // 2. Hitung PNS & PPPK
+        const { count: totalPNS } = await mySupabase.from('data_aktif_pkb').select('*', { count: 'exact', head: true }).eq('jenis_pegawai', 'PNS');
+        const { count: totalPPPK } = await mySupabase.from('data_aktif_pkb').select('*', { count: 'exact', head: true }).eq('jenis_pegawai', 'PPPK');
+        
+        // 3. Hitung Jenis Kelamin
+        const { count: totalPria } = await mySupabase.from('data_aktif_pkb').select('*', { count: 'exact', head: true }).ilike('jenis_kelamin', '%laki%');
+        const { count: totalWanita } = await mySupabase.from('data_aktif_pkb').select('*', { count: 'exact', head: true }).ilike('jenis_kelamin', 'perempuan');
 
-        // Hitung Total PNS
-        const { count: totalPNS, error: errPNS } = await mySupabase
-            .from('data_aktif_pkb')
-            .select('*', { count: 'exact', head: true })
-            .eq('jenis_pegawai', 'PNS');
-            
-        if (errPNS) throw errPNS;
+        // 4. Hitung Kelompok Jabatan
+        const { count: totalPKB } = await mySupabase.from('data_aktif_pkb').select('*', { count: 'exact', head: true }).ilike('kelompok_jabatan', '%Penyuluh%');
+        const { count: totalPLKB } = await mySupabase.from('data_aktif_pkb').select('*', { count: 'exact', head: true }).ilike('kelompok_jabatan', '%Petugas Lapangan%');
 
-        // Hitung Total PPPK
-        const { count: totalPPPK, error: errPPPK } = await mySupabase
-            .from('data_aktif_pkb')
-            .select('*', { count: 'exact', head: true })
-            .eq('jenis_pegawai', 'PPPK');
-            
-        if (errPPPK) throw errPPPK;
-
-        // Cetak ke Layar
+        // Cetak ke Layar (Kartu)
         document.getElementById('total-pegawai').innerText = totalSemua || 0;
         document.getElementById('total-pns').innerText = totalPNS || 0;
         document.getElementById('total-pppk').innerText = totalPPPK || 0;
+        document.getElementById('total-pria').innerText = totalPria || 0;
+        document.getElementById('total-wanita').innerText = totalWanita || 0;
+
+        // Cetak ke Layar (Tabel)
+        document.getElementById('tabel-pkb').innerText = totalPKB || 0;
+        document.getElementById('tabel-plkb').innerText = totalPLKB || 0;
         
-        console.log("Data berhasil dimuat.");
+        console.log("Semua data berhasil dimuat.");
     } catch (error) {
         console.error("Gagal memuat data dari Supabase:", error);
     }
 }
 
 // 4. Fungsi Navigasi Antar Halaman
-// Fungsi ini HARUS berada di "global scope" agar bisa dipanggil dari atribut onclick di HTML
 window.tampilkanLogin = function() {
     halDasbor.style.display = 'none';
     halProfil.style.display = 'none';
@@ -80,7 +75,6 @@ window.prosesLogin = async function() {
     pesanError.style.display = 'none';
 
     try {
-        // Mencari NIP di Supabase
         const { data, error } = await mySupabase
             .from('data_aktif_pkb')
             .select('*')
@@ -111,5 +105,4 @@ window.keluar = function() {
     kembaliKeDasbor();
 };
 
-// Jalankan fungsi hitung data otomatis saat halaman selesai dimuat
 window.addEventListener('DOMContentLoaded', muatRingkasanData);
