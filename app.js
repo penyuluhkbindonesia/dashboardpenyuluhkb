@@ -15,16 +15,14 @@ let chartGenerasiInstance = null;
 let chartPendidikanInstance = null;
 let chartGolonganInstance = null;
 
-// Helper: Format Angka Ribuan
 function formatAngka(angka) {
     return Number(angka).toLocaleString('id-ID');
 }
 
-// Helper REVISI: Mengubah format yyyy-mm-dd menjadi dd-mm-yyyy untuk tampilan layar
 function formatTanggalIndo(tglStr) {
     if (!tglStr) return '-';
     const bagian = tglStr.split('-');
-    if (bagian.length !== 3) return tglStr; // kembalikan apa adanya jika format salah
+    if (bagian.length !== 3) return tglStr;
     return `${bagian[2]}-${bagian[1]}-${bagian[0]}`;
 }
 
@@ -143,7 +141,6 @@ function renderDasbor() {
     
     dataPensiunTabel.slice(0, 50).forEach(p => {
         let tr = document.createElement('tr');
-        // REVISI: Menggunakan fungsi formatTanggalIndo() untuk nilai dalam tabel
         const tanggalFormatted = formatTanggalIndo(p.tanggal_pensiun);
         tr.innerHTML = `<td>${p.nama_lengkap}</td><td>${p.provinsi}</td><td>${p.jabatan}</td><td style="font-weight:bold; color:#dc3545;">${tanggalFormatted}</td>`;
         tbodyPensiun.appendChild(tr);
