@@ -21,7 +21,7 @@
         
         /* Grid Layout 2 Kolom untuk Dasbor */
         .dashboard-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-        @media (max-width: 768px) { .dashboard-layout { grid-template-columns: 1fr; } } /* Responsif untuk HP menjadi 1 kolom */
+        @media (max-width: 768px) { .dashboard-layout { grid-template-columns: 1fr; } } 
         
         /* Panel Kiri & Kanan */
         .panel { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -77,41 +77,48 @@
                 <h2>Visual Data & Rekapitulasi</h2>
                 
                 <div class="dashboard-grid">
-                    <div class="card">
-                        <h3>Total Pegawai</h3>
+                    <div class="card" style="grid-column: span 2;">
+                        <h3>Total PKB/PLKB</h3>
                         <p class="angka" id="total-pegawai">...</p>
                     </div>
                     <div class="card">
-                        <h3>Total PNS</h3>
+                        <h3>PNS</h3>
                         <p class="angka" id="total-pns">...</p>
                     </div>
                     <div class="card">
-                        <h3>Total PPPK</h3>
+                        <h3>PPPK</h3>
                         <p class="angka" id="total-pppk">...</p>
+                    </div>
+                    <div class="card">
+                        <h3>Laki-Laki</h3>
+                        <p class="angka" id="total-pria">...</p>
+                    </div>
+                    <div class="card">
+                        <h3>Perempuan</h3>
+                        <p class="angka" id="total-wanita">...</p>
                     </div>
                 </div>
 
-                <h3>Status Kepegawaian (Contoh Tabel)</h3>
+                <h3>Rekap Kelompok Jabatan</h3>
                 <table>
                     <thead>
                         <tr>
-                            <th>Keterangan</th>
+                            <th>Kelompok Jabatan</th>
                             <th>Jumlah</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Aparatur Sipil Negara (PNS)</td>
-                            <td>Terlampir pada dashboard</td>
+                            <td>Penyuluh Keluarga Berencana (PKB)</td>
+                            <td id="tabel-pkb" style="font-weight: bold; text-align: center;">...</td>
                         </tr>
                         <tr>
-                            <td>Pegawai Pemerintah (PPPK)</td>
-                            <td>Terlampir pada dashboard</td>
+                            <td>Petugas Lapangan KB (PLKB)</td>
+                            <td id="tabel-plkb" style="font-weight: bold; text-align: center;">...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-
         </div>
 
         <div id="halaman-login" class="login-box">
@@ -142,6 +149,5 @@
 </div>
 
 <script src="app.js"></script>
-
 </body>
 </html>
