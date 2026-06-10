@@ -12,6 +12,13 @@ let chartProvInstance = null;
 let chartUmurInstance = null;
 let chartJabatanInstance = null;
 let chartGenerasiInstance = null;
+let chartPendidikanInstance = null;
+let chartGolonganInstance = null;
+
+// Fungsi helper pemformatan angka ribuan (standar Indonesia)
+function formatAngka(angka) {
+    return Number(angka).toLocaleString('id-ID');
+}
 
 async function inisialisasiDasbor() {
     try {
@@ -22,9 +29,10 @@ async function inisialisasiDasbor() {
         let hasMore = true;
 
         while (hasMore) {
+            // PERBAIKAN: Menambahkan 'golongan' dan 'pendidikan_akhir' ke query
             const { data, error } = await mySupabase
                 .from('data_aktif_pkb')
-                .select('nip, nama_lengkap, provinsi, jenis_pegawai, jenis_kelamin, jabatan, tanggal_lahir, tanggal_pensiun')
+                .select('nip, nama_lengkap, provinsi, jenis_pegawai, jenis_kelamin, jabatan, golongan, pendidikan_akhir, tanggal_lahir, tanggal_pensiun')
                 .range(from, from + step - 1);
                 
             if (error) { console.error(error); break; }
@@ -42,7 +50,6 @@ async function inisialisasiDasbor() {
         renderDasbor();
     } catch (error) {
         console.error("Gagal menarik data:", error);
-        // Tetap sembunyikan loading jika gagal agar tidak blank
         document.getElementById('loading-screen').style.display = 'none'; 
     }
 }
@@ -71,6 +78,8 @@ function renderDasbor() {
     let umurCount = { '< 30': 0, '30-39': 0, '40-49': 0, '50-59': 0, '60+': 0 };
     let generasiCount = { 'Gen Z': 0, 'Milenial': 0, 'Gen X': 0, 'Baby Boomer': 0 };
     let jabatanCount = {};
+    let pendidikanCount = {};
+    let golonganCount = {};
     let dataPensiunTabel = [];
 
     dataAktif.forEach(row => {
@@ -93,6 +102,10 @@ function renderDasbor() {
 
         if (row.provinsi) provCount[row.provinsi] = (provCount[row.provinsi] || 0) + 1;
         if (row.jabatan) jabatanCount[row.jabatan] = (jabatanCount[row.jabatan] || 0) + 1;
+        
+        // Agregasi Pendidikan & Golongan
+        if (row.pendidikan_akhir) pendidikanCount[row.pendidikan_akhir] = (pendidikanCount[row.pendidikan_akhir] || 0) + 1;
+        if (row.golongan) golonganCount[row.golongan] = (golonganCount[row.golongan] || 0) + 1;
 
         if (row.tanggal_lahir) {
             const tahunLahir = parseInt(row.tanggal_lahir.split('-')[0]);
@@ -111,13 +124,14 @@ function renderDasbor() {
         }
     });
 
-    document.getElementById('kpi-total').innerText = dataAktif.length;
-    document.getElementById('kpi-pns').innerText = kpiPns;
-    document.getElementById('kpi-pppk').innerText = kpiPppk;
-    document.getElementById('kpi-pria').innerText = kpiPria;
-    document.getElementById('kpi-wanita').innerText = kpiWanita;
-    document.getElementById('kpi-pensiun-bulan').innerText = kpiPensiunBln;
-    document.getElementById('kpi-pensiun-tahun').innerText = kpiPensiunThn;
+    // Menerapkan format angka ribuan pada KPI Cards
+    document.getElementById('kpi-total').innerText = formatAngka(dataAktif.length);
+    document.getElementById('kpi-pns').innerText = formatAngka(kpiPns);
+    document.getElementById('kpi-pppk').innerText = formatAngka(kpiPppk);
+    document.getElementById('kpi-pria').innerText = formatAngka(kpiPria);
+    document.getElementById('kpi-wanita').innerText = formatAngka(kpiWanita);
+    document.getElementById('kpi-pensiun-bulan').innerText = formatAngka(kpiPensiunBln);
+    document.getElementById('kpi-pensiun-tahun').innerText = formatAngka(kpiPensiunThn);
 
     dataPensiunTabel.sort((a, b) => new Date(a.tanggal_pensiun) - new Date(b.tanggal_pensiun));
     const tbodyPensiun = document.querySelector('#tabelPensiun tbody');
@@ -133,8 +147,9 @@ function renderDasbor() {
     gambarChartUmur(umurCount);
     gambarChartJabatan(jabatanCount);
     gambarChartGenerasi(generasiCount);
+    gambarChartPendidikan(pendidikanCount);
+    gambarChartGolongan(golonganCount);
 
-    // MENGHILANGKAN LAYAR LOADING SETELAH RENDER SELESAI
     document.getElementById('loading-screen').style.display = 'none';
 }
 
@@ -226,6 +241,47 @@ function gambarChartJabatan(jabatanData) {
             }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } } }
+    });
+}
+
+function gambarChartPendidikan(pendidikanData) {
+    const ctx = document.getElementById('chartPendidikan').getContext('2d');
+    if (chartPendidikanInstance) chartPendidikanInstance.destroy();
+
+    const sortedData = Object.entries(pendidikanData).sort((a, b) => b[1] - a[1]);
+
+    chartPendidikanInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: sortedData.map(item => item[0]),
+            datasets: [{
+                data: sortedData.map(item => item[1]),
+                backgroundColor: '#17a2b8',
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+}
+
+function gambarChartGolongan(golonganData) {
+    const ctx = document.getElementById('chartGolongan').getContext('2d');
+    if (chartGolonganInstance) chartGolonganInstance.destroy();
+
+    // Mengurutkan Golongan berdasarkan abjad (misal: I/a, II/a, III/a, dst)
+    const sortedData = Object.entries(golonganData).sort((a, b) => a[0].localeCompare(b[0]));
+
+    chartGolonganInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: sortedData.map(item => item[0]),
+            datasets: [{
+                data: sortedData.map(item => item[1]),
+                backgroundColor: '#6c757d',
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 }
 
