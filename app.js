@@ -13,26 +13,25 @@ let chartUmurInstance = null;
 let chartJabatanInstance = null;
 let chartGenerasiInstance = null;
 
-// Menggunakan Looping untuk menembus batas maksimal 1000 baris API Supabase
 async function inisialisasiDasbor() {
     try {
-        console.log("Menarik data master (Mungkin memakan waktu beberapa detik)...");
+        console.log("Menarik data master...");
         let allData = [];
         let step = 1000;
         let from = 0;
         let hasMore = true;
 
         while (hasMore) {
+            // PERBAIKAN: Menambahkan 'jenis_kelamin' ke dalam data yang ditarik
             const { data, error } = await mySupabase
                 .from('data_aktif_pkb')
-                .select('nip, nama_lengkap, provinsi, jenis_pegawai, jabatan, tanggal_lahir, tanggal_pensiun')
+                .select('nip, nama_lengkap, provinsi, jenis_pegawai, jenis_kelamin, jabatan, tanggal_lahir, tanggal_pensiun')
                 .range(from, from + step - 1);
                 
             if (error) { console.error(error); break; }
             
             allData = allData.concat(data);
             
-            // Jika data yang ditarik kurang dari 1000, berarti itu adalah antrean terakhir
             if (data.length < step) {
                 hasMore = false;
             } else {
@@ -41,7 +40,6 @@ async function inisialisasiDasbor() {
         }
         
         dataMaster = allData;
-        console.log("Total Data Terkumpul:", dataMaster.length);
         renderDasbor();
     } catch (error) {
         console.error("Gagal menarik data:", error);
@@ -51,23 +49,24 @@ async function inisialisasiDasbor() {
 function renderDasbor() {
     let dataAktif = dataMaster;
     
-    // Label Dinamis & Filter
     const labelCakupan = document.getElementById('label-cakupan');
     const btnReset = document.getElementById('btn-reset-filter');
 
+    // PERBAIKAN: Label Teks
     if (filterProvinsiAktif) {
         dataAktif = dataMaster.filter(d => d.provinsi === filterProvinsiAktif);
-        labelCakupan.innerHTML = `Menampilkan Data: <span style="color:#0056b3;">PROVINSI ${filterProvinsiAktif}</span>`;
+        labelCakupan.innerHTML = `Data PKB/PLKB : <span style="color:#0056b3;">PROVINSI ${filterProvinsiAktif}</span>`;
         btnReset.style.display = 'block';
     } else {
-        labelCakupan.innerText = "Menampilkan Data: NASIONAL";
+        labelCakupan.innerText = "Data PKB/PLKB : NASIONAL";
         btnReset.style.display = 'none';
     }
 
     const bulanIni = '2026-06';
     const tahunIni = '2026';
 
-    let kpiPns = 0, kpiPppk = 0, kpiPensiunBln = 0, kpiPensiunThn = 0;
+    // PERBAIKAN: Tambah Variabel Gender
+    let kpiPns = 0, kpiPppk = 0, kpiPensiunBln = 0, kpiPensiunThn = 0, kpiPria = 0, kpiWanita = 0;
     
     let provCount = {};
     let umurCount = { '< 30': 0, '30-39': 0, '40-49': 0, '50-59': 0, '60+': 0 };
@@ -78,6 +77,13 @@ function renderDasbor() {
     dataAktif.forEach(row => {
         if (row.jenis_pegawai === 'PNS') kpiPns++;
         if (row.jenis_pegawai === 'PPPK') kpiPppk++;
+        
+        // PERBAIKAN: Hitung Gender
+        if (row.jenis_kelamin) {
+            const jk = row.jenis_kelamin.toLowerCase();
+            if (jk.includes('laki')) kpiPria++;
+            else if (jk.includes('perempuan') || jk.includes('wanita')) kpiWanita++;
+        }
         
         if (row.tanggal_pensiun) {
             if (row.tanggal_pensiun.startsWith(bulanIni)) kpiPensiunBln++;
@@ -94,14 +100,12 @@ function renderDasbor() {
             const tahunLahir = parseInt(row.tanggal_lahir.split('-')[0]);
             const usia = 2026 - tahunLahir;
             
-            // Agregasi Umur
             if (usia < 30) umurCount['< 30']++;
             else if (usia <= 39) umurCount['30-39']++;
             else if (usia <= 49) umurCount['40-49']++;
             else if (usia <= 59) umurCount['50-59']++;
             else umurCount['60+']++;
 
-            // Agregasi Generasi
             if (tahunLahir >= 1997) generasiCount['Gen Z']++;
             else if (tahunLahir >= 1981) generasiCount['Milenial']++;
             else if (tahunLahir >= 1965) generasiCount['Gen X']++;
@@ -109,9 +113,12 @@ function renderDasbor() {
         }
     });
 
+    // PERBAIKAN: Cetak Gender ke Layar
     document.getElementById('kpi-total').innerText = dataAktif.length;
     document.getElementById('kpi-pns').innerText = kpiPns;
     document.getElementById('kpi-pppk').innerText = kpiPppk;
+    document.getElementById('kpi-pria').innerText = kpiPria;
+    document.getElementById('kpi-wanita').innerText = kpiWanita;
     document.getElementById('kpi-pensiun-bulan').innerText = kpiPensiunBln;
     document.getElementById('kpi-pensiun-tahun').innerText = kpiPensiunThn;
 
@@ -140,7 +147,7 @@ function gambarChartProvinsi(provData) {
     const values = sortedProv.map(item => item[1]);
 
     chartProvInstance = new Chart(ctx, {
-        type: 'bar', // Mengubah tipe menjadi grafik batang horizontal untuk visualisasi peta wilayah yang lebih baik
+        type: 'bar',
         data: {
             labels: labels,
             datasets: [{
@@ -151,7 +158,7 @@ function gambarChartProvinsi(provData) {
             }]
         },
         options: {
-            indexAxis: 'y', // KUNCI RAHASIA: Ini memutar grafik agar nama 30+ provinsi bisa terbaca sempurna
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             onClick: (e, activeElements) => {
@@ -170,7 +177,6 @@ function gambarChartUmur(umurData) {
     const ctx = document.getElementById('chartUmur').getContext('2d');
     if (chartUmurInstance) chartUmurInstance.destroy();
 
-    // Memberikan warna berbeda pada tiap batang umur
     const warnaBar = ['#007bff', '#28a745', '#ffc107', '#fd7e14', '#dc3545'];
 
     chartUmurInstance = new Chart(ctx, {
