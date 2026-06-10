@@ -7,9 +7,8 @@ const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 let dataMaster = []; 
 let filterProvinsiAktif = null;
-let currentZoomLevel = 100; // Skala dasar persen untuk font sistem
+let currentZoomLevel = 100; 
 
-// Instansiasi Grafik Komponen Chart.js
 let chartProvInstance = null;
 let chartUmurInstance = null;
 let chartJabatanInstance = null;
@@ -17,7 +16,6 @@ let chartGenerasiInstance = null;
 let chartPendidikanInstance = null;
 let chartGolonganInstance = null;
 
-// Helper Komponen Formatting
 function formatAngka(angka) { return Number(angka).toLocaleString('id-ID'); }
 function formatTanggalIndo(tglStr) {
     if (!tglStr) return '-';
@@ -164,17 +162,15 @@ window.resetFilter = function() { filterProvinsiAktif = null; renderDasbor(); };
 // ==========================================================================
 // 4. SISTEM OTENTIKASI & MULTI-ROLE ROUTING SYSTEM
 // ==========================================================================
-function penyesuaianPlaceholderLogin() {
+window.penyesuaianPlaceholderLogin = function() {
     const role = document.getElementById('login-role').value;
     const inputUser = document.getElementById('inputUser');
     inputUser.placeholder = (role === 'pkb') ? "Masukkan 18 Digit NIP" : "Masukkan Nama Pengguna (Username)";
-}
-document.getElementById('login-role').addEventListener('change', penyesuaianPlaceholderLogin);
+};
 
-function navigasiLoginAtauKeluar() {
+window.navigasiLoginAtauKeluar = function() {
     const btn = document.getElementById('btn-auth-action');
     if (btn.innerText === "Keluar Sesi") {
-        // Proses Log Out, kembalikan ke awal
         document.getElementById('view-superadmin').style.display = 'none';
         document.getElementById('view-admin').style.display = 'none';
         document.getElementById('view-portal-pkb').style.display = 'none';
@@ -185,15 +181,15 @@ function navigasiLoginAtauKeluar() {
         document.getElementById('view-dasbor-publik').style.display = 'none';
         document.getElementById('view-login').style.display = 'block';
     }
-}
+};
 
-function kembaliKeDasborPublik() {
+window.kembaliKeDasborPublik = function() {
     document.getElementById('view-login').style.display = 'none';
     document.getElementById('view-dasbor-publik').style.display = 'block';
     document.getElementById('pesan-error').style.display = 'none';
-}
+};
 
-async function eksekusiLogin() {
+window.eksekusiLogin = async function() {
     const role = document.getElementById('login-role').value;
     const user = document.getElementById('inputUser').value;
     const pass = document.getElementById('inputPass').value;
@@ -213,7 +209,6 @@ async function eksekusiLogin() {
         } else { memunculkanErrorLogin(); }
     } 
     else if (role === 'pkb') {
-        // Otentikasi Nyata Berbasis NIP Melalui Supabase
         try {
             const { data, error } = await mySupabase.from('data_aktif_pkb').select('*').eq('nip', user).single();
             if (error || !data) { memunculkanErrorLogin("NIP Tidak Ditemukan!"); }
@@ -226,7 +221,7 @@ async function eksekusiLogin() {
             }
         } catch (e) { memunculkanErrorLogin(); }
     }
-}
+};
 
 function memunculkanErrorLogin(customMsg) {
     const err = document.getElementById('pesan-error');
@@ -255,7 +250,7 @@ function masukHalamanRole(role, namaHeader) {
 // ==========================================================================
 // 5. INTERFASE INTERNAL PORTAL (TABS ROUTING & AKSESIBILITAS)
 // ==========================================================================
-function pindahTabPortal(tabId) {
+window.pindahTabPortal = function(tabId) {
     const contents = document.querySelectorAll('.tab-content');
     contents.forEach(c => c.style.display = 'none');
     
@@ -263,38 +258,38 @@ function pindahTabPortal(tabId) {
     links.forEach(l => l.classList.remove('active'));
 
     document.getElementById(`tab-${tabId}`).style.display = 'block';
-    event.currentTarget.classList.add('active');
-}
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
+};
 
-function simpanPembaruanProfilDummy() {
+window.simpanPembaruanProfilDummy = function() {
     alert("Pembaharuan Profil Memerlukan Persetujuan Admin.");
-}
+};
 
-function bukaFileFullscreen(filename) {
+window.bukaFileFullscreen = function(filename) {
     document.getElementById('viewer-filename').innerText = filename;
     document.getElementById('viewer-body-content').innerText = `[ Sedang Membaca Berkas Fullscreen: ${filename} ]`;
     document.getElementById('viewer-overlay').style.display = 'flex';
-}
+};
 
-function tutupFileFullscreen() {
+window.tutupFileFullscreen = function() {
     document.getElementById('viewer-overlay').style.display = 'none';
-}
+};
 
-// Fitur Pengaturan Kenyamanan Visual (Aksesibilitas)
-function ubahTemaAplikasi(theme) {
+window.ubahTemaAplikasi = function(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-}
+};
 
-function ubahSkalaZoom(aksi) {
+window.ubahSkalaZoom = function(aksi) {
     if (aksi === '+') currentZoomLevel += 10;
     else if (aksi === '-') currentZoomLevel -= 10;
     else currentZoomLevel = 100;
 
-    // Batasi skala zoom agar tetap aman secara layout
     if (currentZoomLevel < 80) currentZoomLevel = 80;
     if (currentZoomLevel > 130) currentZoomLevel = 130;
 
     document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`);
-}
+};
 
 window.addEventListener('DOMContentLoaded', inisialisasiDasbor);
