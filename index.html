@@ -62,6 +62,7 @@
 </head>
 <body>
 
+<!-- Layar Loading Awal -->
 <div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;">
     <div style="border: 8px solid #f3f3f3; border-top: 8px solid #0056b3; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite;"></div>
     <h3 style="color: #0056b3; margin-top: 20px;">Menyinkronkan Data Nasional...</h3>
@@ -83,6 +84,7 @@
                 <button id="btn-reset-filter" class="btn-reset" onclick="resetFilter()">Tampilkan Nasional</button>
             </div>
 
+            <!-- KPI Cards -->
             <div class="kpi-grid">
                 <div class="card">
                     <h3>TOTAL PKB/PLKB</h3>
@@ -114,13 +116,8 @@
                 </div>
             </div>
 
+            <!-- BARIS 1 (DITUKAR): Sebaran Provinsi (Kiri) & Pendidikan Terakhir (Kanan) -->
             <div class="chart-grid">
-                <div class="panel">
-                    <h2>Pendidikan Terakhir</h2>
-                    <div class="canvas-container">
-                        <canvas id="chartPendidikan"></canvas>
-                    </div>
-                </div>
                 <div class="panel">
                     <h2>Sebaran Provinsi (Klik bar untuk memfilter)</h2>
                     <div class="scrollable-panel">
@@ -129,8 +126,15 @@
                         </div>
                     </div>
                 </div>
+                <div class="panel">
+                    <h2>Pendidikan Terakhir</h2>
+                    <div class="canvas-container">
+                        <canvas id="chartPendidikan"></canvas>
+                    </div>
+                </div>
             </div>
 
+            <!-- BARIS 2: Kelompok Umur & Demografi Generasi -->
             <div class="chart-grid">
                 <div class="panel">
                     <h2>Kelompok Umur Pegawai</h2>
@@ -146,6 +150,7 @@
                 </div>
             </div>
 
+            <!-- BARIS 3: Golongan Pegawai & Proporsi Jabatan -->
             <div class="chart-grid">
                 <div class="panel">
                     <h2>Golongan Pegawai</h2>
@@ -161,6 +166,7 @@
                 </div>
             </div>
 
+            <!-- Tabel Pensiun -->
             <div class="panel">
                 <h2>Daftar Pensiun Terdekat (2026)</h2>
                 <div class="table-responsive">
@@ -179,6 +185,7 @@
             </div>
         </div>
 
+        <!-- Halaman Login -->
         <div id="halaman-login" class="login-box">
             <h2 style="text-align: center; margin-top: 0;">Portal Masuk</h2>
             <p style="text-align: center; color: #666;">Gunakan NIP untuk Pegawai.</p>
@@ -188,6 +195,7 @@
             <p id="pesan-error" style="color: red; display: none; text-align: center; font-size: 0.9rem; margin-top: 15px;"></p>
         </div>
 
+        <!-- Halaman Profil -->
         <div id="halaman-profil" class="profil-box">
             <h3 style="color: #28a745; margin-top: 0;">Autentikasi Berhasil!</h3>
             <hr>
