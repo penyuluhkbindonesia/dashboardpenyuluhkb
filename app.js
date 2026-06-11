@@ -167,7 +167,6 @@ window.kembaliKeDasborPublik = function() {
     document.getElementById('btn-auth-action').style.display = 'block'; 
 };
 
-// Fungsi Mengatur Sapaan Beranda Dinamis (Berdasarkan Jam & Rekam Jejak)
 function siapkanBeranda(namaLengkap) {
     const jamSekarang = new Date().getHours();
     let sapaan = 'Malam';
@@ -179,14 +178,13 @@ function siapkanBeranda(namaLengkap) {
 
     document.getElementById('teks-sapaan').innerText = `Selamat ${sapaan}, ${namaLengkap}`;
 
-    // Memanfaatkan localStorage untuk mengingat kunjungan
     const sudahPernahMasuk = localStorage.getItem('statusKunjunganPortal');
     const teksSambutan = document.getElementById('teks-sambutan');
 
     if (sudahPernahMasuk) {
-        teksSambutan.innerText = "Selamat Datang Kembali di Portal PenyuluhKB";
+        teksSambutan.innerText = "Selamat Datang Kembali di Portal PenyuluhKB Indonesia";
     } else {
-        teksSambutan.innerText = "Selamat Datang di Portal PenyuluhKB";
+        teksSambutan.innerText = "Selamat Datang di Portal PenyuluhKB Indonesia";
         localStorage.setItem('statusKunjunganPortal', 'true');
     }
 }
@@ -217,16 +215,13 @@ window.eksekusiLogin = async function() {
             const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
             const wilayahKerja = (data.kabupaten || '') + ", " + data.provinsi;
 
-            // Memasukkan data ke kartu Tampilan Profil
             document.getElementById('pkb-nama').innerText = data.nama_lengkap;
             document.getElementById('pkb-nip').innerText = data.nip;
             document.getElementById('pkb-jabatan').innerText = gelarJabatan;
             document.getElementById('pkb-wilayah').innerText = wilayahKerja;
             
-            // Re-label text di bawah foto menjadi jabatan asli
             document.getElementById('profil-subtitle').innerText = gelarJabatan;
 
-            // Menyiapkan data bawaan (pre-filled) untuk Form Update Profil
             document.getElementById('edit-nama').value = data.nama_lengkap;
             document.getElementById('edit-nip').value = data.nip;
             document.getElementById('edit-jabatan').value = data.jabatan;
@@ -258,7 +253,6 @@ function masukHalamanRole(role, namaHeader) {
     if (role === 'admin') document.getElementById('view-admin').style.display = 'block';
     if (role === 'pkb') {
         document.getElementById('view-portal-pkb').style.display = 'grid';
-        // Arahkan otomatis ke Menu Beranda
         pindahTabPortal('beranda');
     }
 }
@@ -285,7 +279,22 @@ window.batalEditProfil = function() {
 
 window.simpanProfilKeServer = function() {
     alert("Pembaharuan Profil Memerlukan Persetujuan Admin.");
-    batalEditProfil(); // Tutup form setelah disimulasikan menyimpan
+    batalEditProfil(); 
+};
+
+// Fungsi Baru: Mengirim Saran Pengguna
+window.kirimSaranPengguna = function() {
+    const kategori = document.getElementById('kategori-saran').value;
+    const isi = document.getElementById('isi-saran').value.trim();
+    
+    if(!isi) {
+        alert("Silakan ketik pesan Anda terlebih dahulu sebelum mengirim.");
+        return;
+    }
+    
+    // Simulasi pengiriman sukses
+    alert(`Terima kasih! Masukan Anda untuk kategori "${kategori}" telah berhasil dikirim ke server pusat.`);
+    document.getElementById('isi-saran').value = ''; // Reset kotak isian
 };
 
 window.bukaFileFullscreen = function(filename) {
