@@ -63,22 +63,25 @@
 
         /* Form Login Master */
         .login-box { background: var(--bg-card); padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; display: none; }
-        .login-box h2 { margin-top: 0; text-align: center; }
+        .login-box h2 { margin-top: 0; text-align: center; font-size: 1.5rem; }
         input, select { width: 100%; padding: 10px; margin: 10px 0; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); box-sizing: border-box; }
         .btn-primary { background-color: #007bff; color: white; border: none; padding: 10px; cursor: pointer; font-weight: bold; width: 100%; border-radius: 4px; margin-top: 10px; }
         .btn-batal { background-color: transparent; color: var(--text-muted); border: none; cursor: pointer; text-decoration: underline; width: 100%; margin-top: 10px; }
+        
+        /* Tambahan CSS: Pembungkus untuk ikon Show/Hide Password */
+        .password-wrapper { position: relative; width: 100%; }
+        .password-wrapper input { padding-right: 40px; /* Ruang untuk ikon mata */ }
+        .password-wrapper .toggle-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); width: 20px; height: 20px; }
 
         /* Tata Letak Multi Kolom Menu Internal (Portal PKB) */
         .portal-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; display: none; }
         @media (max-width: 768px) { .portal-layout { grid-template-columns: 1fr; } }
         
-        /* Menu Samping (Sidebar) Portal */
         .sidebar { background: var(--bg-card); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: fit-content; }
         .sidebar-menu { list-style: none; padding: 0; margin: 0; }
         .sidebar-menu li { padding: 12px 15px; margin-bottom: 5px; border-radius: 4px; cursor: pointer; font-weight: bold; color: var(--text-muted); transition: 0.2s; }
         .sidebar-menu li:hover, .sidebar-menu li.active { background: #0056b3; color: white; }
 
-        /* Pola Tata Letak 2 Kolom Internal Konten */
         .dua-kolom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 768px) { .dua-kolom-grid { grid-template-columns: 1fr; } }
         
@@ -87,16 +90,13 @@
         .daftar-item-klik li { padding: 10px; border-bottom: 1px solid var(--border-color); cursor: pointer; color: #0056b3; font-weight: 500; }
         .daftar-item-klik li:hover { text-decoration: underline; background: rgba(0,86,179,0.05); }
 
-        /* Komponen Foto Profil */
         .avatar-container { text-align: center; margin-bottom: 20px; }
         .avatar-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #0056b3; background: #eee; }
 
-        /* Komponen Layar Penuh Pembaca File */
         .fullscreen-viewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
         .viewer-header { width: 90%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .viewer-body { width: 90%; max-width: 900px; height: 80vh; background: white; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: #333; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 
-        /* Tabel Umum */
         .table-responsive { overflow-x: auto; max-height: 350px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; color: var(--text-main); }
         th, td { border-bottom: 1px solid var(--border-color); padding: 12px; text-align: left; }
@@ -173,21 +173,20 @@
         </div>
 
         <div id="view-login" class="login-box">
-            <h2>Portal Masuk Sistem</h2>
-            <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">Gunakan NIP untuk Pegawai atau Kode Akses untuk Admin.</p>
+            <h2>Login Portal</h2>
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Gunakan User dan Password untuk Masuk.</p>
             
-            <label>Akses Sebagai:</label>
-            <select id="login-role" onchange="penyesuaianPlaceholderLogin()">
-                <option value="pkb">PKB / PLKB (Pegawai)</option>
-                <option value="admin">Admin Wilayah (Provinsi/Kota)</option>
-                <option value="superadmin">Super Admin (Pusat)</option>
-            </select>
-
-            <input type="text" id="inputUser" placeholder="Masukkan 18 Digit NIP" required>
-            <input type="password" id="inputPass" placeholder="Masukkan Password" required>
+            <input type="text" id="inputUser" placeholder="Masukkan user anda" required>
+            
+            <div class="password-wrapper">
+                <input type="password" id="inputPass" placeholder="Masukkan Password" required>
+                <svg class="toggle-icon" id="togglePasswordIcon" onclick="togglePasswordVisibility()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path id="eye-icon-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+            </div>
             
             <button class="btn-primary" onclick="eksekusiLogin()">Otorisasi Masuk</button>
-            <button class="btn-batal" onclick="kembaliKeDasborPublik()">Batal, Kembali</button>
+            <button class="btn-batal" onclick="kembaliKeDasborPublik()">Batal, Kembali ke Dashboard</button>
             <p id="pesan-error" style="color: red; display: none; text-align: center; font-size: 0.9rem; margin-top: 15px;"></p>
         </div>
 
@@ -212,7 +211,7 @@
                 <p>Selamat datang Pengelola Kepegawaian Wilayah. Gunakan panel ini untuk melakukan validasi.</p>
                 <div style="background: #fff3cd; padding: 20px; border-radius: 6px; margin-top: 15px; color: #856404; border: 1px solid #ffeeba;">
                     <h4>Antrean Persetujuan Pembaruan Profil Mandiri PKB/PLKB:</h4>
-                    <p style="font-size: 0.9rem; margin-bottom: 0;">Saat ini belum ada pengajuan baru yang membutuhkan persetujuan berkas fisik fisik dari wilayah Anda.</p>
+                    <p style="font-size: 0.9rem; margin-bottom: 0;">Saat ini belum ada pengajuan baru yang membutuhkan persetujuan berkas fisik dari wilayah Anda.</p>
                 </div>
             </div>
         </div>
