@@ -148,7 +148,6 @@ window.popDomKec = function() {
 window.popDomDesa = function() { fetchWilayah('Desa/Kelurahan', document.getElementById('dom-kec').value, 'dom-desa', '-- Desa/Kel --'); };
 
 window.popBinKec = async function() {
-    const provKode = document.getElementById('bin-prov').value;
     const kabKode = document.getElementById('bin-kab').value;
     if(kabKode) {
         fetchWilayah('Kecamatan', kabKode, 'bin-kec', '-- Pilih Kecamatan --');
@@ -165,14 +164,13 @@ window.popBinDesa = async function() {
     const { data } = await mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', 'Desa/Kelurahan').eq('kode_induk', kecKode).order('nama');
     wrap.innerHTML = '';
     if(data && data.length > 0) {
-        // Render sebagai Checkbox untuk Binaan
-        data.forEach(d => { wrap.innerHTML += `<label style="width:48%; display:inline-block;"><input type="checkbox" value="${d.kode}"> ${d.nama}</label>`; });
+        data.forEach(d => { wrap.innerHTML += `<label style="width:48%; display:inline-block; margin-bottom:5px;"><input type="checkbox" value="${d.kode}"> ${d.nama}</label>`; });
     } else { wrap.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Data desa tidak tersedia.</span>'; }
 };
 
-// C. Inisialisasi Wilayah Global & Binaan (Terkunci Sesuai Profil)
+// C. Inisialisasi Wilayah Global & Binaan (Revisi Pencarian Pintar - Wildcard)
 async function inisialisasiSemuaWilayah(profilData) {
-    // 1. Muat Provinsi untuk Tempat Lahir dan Domisili (Bebas Pilih)
+    // 1. Muat Provinsi untuk Tempat Lahir dan Domisili
     fetchWilayah('Provinsi', null, 'tl-provinsi', '-- Pilih Provinsi --');
     fetchWilayah('Provinsi', null, 'dom-prov', '-- Pilih Provinsi --');
 
@@ -181,17 +179,38 @@ async function inisialisasiSemuaWilayah(profilData) {
     const binKabSelect = document.getElementById('bin-kab');
     
     if(profilData.provinsi) {
-        const { data: provData } = await mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', 'Provinsi').ilike('nama', profilData.provinsi).single();
-        if(provData) {
-            binProvSelect.innerHTML = `<option value="${provData.kode}" selected>${provData.nama}</option>`;
+        // Gunakan Wildcard (%) agar Kutai Barat bisa mendeteksi Kabupaten Kutai Barat
+        const { data: provData } = await mySupabase.from('referensi_wilayah')
+            .select('kode, nama')
+            .eq('level_wilayah', 'Provinsi')
+            .ilike('nama', `%${profilData.provinsi}%`)
+            .limit(1);
+
+        if(provData && provData.length > 0) {
+            const pKode = provData[0].kode;
+            binProvSelect.innerHTML = `<option value="${pKode}" selected>${provData[0].nama}</option>`;
+            
             if(profilData.kabupaten) {
-                const { data: kabData } = await mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', 'Kabupaten/Kota').eq('kode_induk', provData.kode).ilike('nama', profilData.kabupaten).single();
-                if(kabData) {
-                    binKabSelect.innerHTML = `<option value="${kabData.kode}" selected>${kabData.nama}</option>`;
-                    // Auto load kecamatan binaan
-                    fetchWilayah('Kecamatan', kabData.kode, 'bin-kec', '-- Pilih Kecamatan --');
+                // Gunakan Wildcard (%) untuk Kabupaten
+                const { data: kabData } = await mySupabase.from('referensi_wilayah')
+                    .select('kode, nama')
+                    .eq('level_wilayah', 'Kabupaten/Kota')
+                    .eq('kode_induk', pKode)
+                    .ilike('nama', `%${profilData.kabupaten}%`)
+                    .limit(1);
+
+                if(kabData && kabData.length > 0) {
+                    const kKode = kabData[0].kode;
+                    binKabSelect.innerHTML = `<option value="${kKode}" selected>${kabData[0].nama}</option>`;
+                    
+                    // Otomatis muat Kecamatan setelah Kabupaten berhasil dikenali
+                    fetchWilayah('Kecamatan', kKode, 'bin-kec', '-- Pilih Kecamatan --');
+                } else {
+                    binKabSelect.innerHTML = `<option value="">-- Wilayah Kabupaten Tidak Ditemukan --</option>`;
                 }
             }
+        } else {
+            binProvSelect.innerHTML = `<option value="">-- Wilayah Provinsi Tidak Ditemukan --</option>`;
         }
     }
 }
@@ -233,7 +252,7 @@ window.updateGolonganRuang = function() {
     const asn = document.getElementById('form-jenis-asn').value; const selGol = document.getElementById('form-golongan');
     let html = '<option value="">-- Pilih Golongan --</option>';
     if(asn === 'PNS') { ['II/a', 'II/b', 'II/c', 'II/d', 'III/a', 'III/b', 'III/c', 'III/d', 'IV/a', 'IV/b', 'IV/c', 'IV/d', 'IV/e'].forEach(g => html += `<option value="${g}">${g}</option>`); } 
-    else if (asn === 'PPPK') { ['V', 'VII', 'IX'].forEach(g => html += `<option value="${g}">${g}</option>`); } // BUG FIXED HERE
+    else if (asn === 'PPPK') { ['V', 'VII', 'IX'].forEach(g => html += `<option value="${g}">${g}</option>`); }
     selGol.innerHTML = html;
 };
 
@@ -263,10 +282,9 @@ async function pulihkanSesi(data) {
     document.getElementById('header-title').innerText = `Portal: ${data.nama_lengkap}`;
     document.getElementById('view-portal-pkb').style.display = 'grid';
 
-    // Pulihkan tab memori (F5)
     const tabTerakhir = localStorage.getItem('activeTab') || 'beranda'; pindahTabPortal(tabTerakhir);
     
-    // Inisialisasi Database Wilayah
+    // Inisialisasi Database Wilayah setelah Profil dimuat
     await inisialisasiSemuaWilayah(data);
 }
 
@@ -281,7 +299,6 @@ window.bukaFormEditProfil = function() { document.getElementById('view-profil-ut
 window.batalEditProfil = function() { document.getElementById('form-edit-profil').style.display = 'none'; document.getElementById('view-profil-utama').style.display = 'block'; };
 
 window.simpanProfilKeServer = function() { 
-    // Simulasi penyimpanan karena belum ada tabel antrean_update_profil
     alert("Data berhasil divalidasi. Pembaruan Profil Memerlukan Persetujuan Admin sebelum tampil di Dasbor."); 
     batalEditProfil(); 
 };
