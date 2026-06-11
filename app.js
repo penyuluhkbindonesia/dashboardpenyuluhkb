@@ -20,7 +20,7 @@ function formatTanggalIndo(tglStr) {
 }
 
 // ==========================================================================
-// 2. MESIN BARU (RPC SERVER-SIDE)
+// 2. MESIN BARU (RPC SERVER-SIDE DASBOR)
 // ==========================================================================
 async function tarikDataDasbor() {
     document.getElementById('loading-screen').style.display = 'flex';
@@ -125,16 +125,14 @@ function gambarChartGolongan(goData) {
     const sorted = Object.entries(goData).sort((a, b) => a[0].localeCompare(b[0]));
     chartGolonganInstance = new Chart(ctx, { type: 'bar', data: { labels: sorted.map(i => i[0]), datasets: [{ data: sorted.map(i => i[1]), backgroundColor: '#6c757d', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
 }
-
 window.resetFilter = function() { filterProvinsiAktif = null; tarikDataDasbor(); };
 
 // ==========================================================================
-// 4. SISTEM OTENTIKASI & PENGATURAN BERANDA
+// 4. SISTEM OTENTIKASI & PERSISTENT SESSION (ANTI-F5 REFRESH)
 // ==========================================================================
 window.togglePasswordVisibility = function() {
     const passInput = document.getElementById('inputPass');
     const iconPath = document.getElementById('eye-icon-path');
-    
     if (passInput.type === 'password') {
         passInput.type = 'text';
         iconPath.setAttribute('d', 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21');
@@ -147,12 +145,17 @@ window.togglePasswordVisibility = function() {
 window.navigasiLoginAtauKeluar = function() {
     const btn = document.getElementById('btn-auth-action');
     if (btn.innerText === "Keluar Sesi") {
+        // Hapus Memori Sesi Saat Keluar
+        localStorage.removeItem('sesi_portal_pkb');
+        
         document.getElementById('view-superadmin').style.display = 'none';
         document.getElementById('view-admin').style.display = 'none';
         document.getElementById('view-portal-pkb').style.display = 'none';
         document.getElementById('view-dasbor-publik').style.display = 'block';
         document.getElementById('header-title').innerText = "Dashboard PenyuluhKB";
         btn.innerText = "Masuk / Login";
+        
+        tarikDataDasbor(); // Muat ulang data Dasbor Publik
     } else {
         document.getElementById('view-dasbor-publik').style.display = 'none';
         document.getElementById('view-login').style.display = 'block';
@@ -170,23 +173,39 @@ window.kembaliKeDasborPublik = function() {
 function siapkanBeranda(namaLengkap) {
     const jamSekarang = new Date().getHours();
     let sapaan = 'Malam';
-    
     if (jamSekarang >= 3 && jamSekarang < 11) sapaan = 'Pagi';
     else if (jamSekarang >= 11 && jamSekarang < 15) sapaan = 'Siang';
     else if (jamSekarang >= 15 && jamSekarang < 18) sapaan = 'Sore';
-    else sapaan = 'Malam';
 
     document.getElementById('teks-sapaan').innerText = `Selamat ${sapaan}, ${namaLengkap}`;
-
     const sudahPernahMasuk = localStorage.getItem('statusKunjunganPortal');
     const teksSambutan = document.getElementById('teks-sambutan');
 
-    if (sudahPernahMasuk) {
-        teksSambutan.innerText = "Selamat Datang Kembali di Portal PenyuluhKB Indonesia";
-    } else {
+    if (sudahPernahMasuk) teksSambutan.innerText = "Selamat Datang Kembali di Portal PenyuluhKB Indonesia";
+    else {
         teksSambutan.innerText = "Selamat Datang di Portal PenyuluhKB Indonesia";
         localStorage.setItem('statusKunjunganPortal', 'true');
     }
+}
+
+// FUNGSI RESTORE SESI (MENGATASI MASALAH F5/REFRESH)
+function pulihkanSesi(data) {
+    const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
+    const wilayahKerja = (data.kabupaten || '') + ", " + data.provinsi;
+
+    document.getElementById('pkb-nama').innerText = data.nama_lengkap;
+    document.getElementById('pkb-nip').innerText = data.nip;
+    document.getElementById('pkb-jabatan').innerText = gelarJabatan;
+    document.getElementById('pkb-wilayah').innerText = wilayahKerja;
+    document.getElementById('profil-subtitle').innerText = gelarJabatan;
+
+    document.getElementById('edit-nama').value = data.nama_lengkap;
+    document.getElementById('edit-nip').value = data.nip;
+    document.getElementById('edit-jabatan').value = data.jabatan;
+    document.getElementById('edit-wilayah').value = wilayahKerja;
+
+    siapkanBeranda(data.nama_lengkap);
+    masukHalamanRole('pkb', data.nama_lengkap);
 }
 
 window.eksekusiLogin = async function() {
@@ -197,38 +216,17 @@ window.eksekusiLogin = async function() {
 
     if (!user || !pass) return;
 
-    if (user === 'superadmin' && pass === 'admin') {
-        masukHalamanRole('superadmin', 'Super Admin Pusat');
-        return;
-    } 
-    
-    if (user === 'admin' && pass === 'admin') {
-        masukHalamanRole('admin', 'Admin Regional');
-        return;
-    } 
+    if (user === 'superadmin' && pass === 'admin') { masukHalamanRole('superadmin', 'Super Admin Pusat'); return; } 
+    if (user === 'admin' && pass === 'admin') { masukHalamanRole('admin', 'Admin Regional'); return; } 
     
     try {
         const { data, error } = await mySupabase.rpc('otentikasi_pegawai', { p_nip: user });
         if (error || !data) { 
             memunculkanErrorLogin("Username/NIP Tidak Ditemukan atau Password Salah!"); 
         } else {
-            const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
-            const wilayahKerja = (data.kabupaten || '') + ", " + data.provinsi;
-
-            document.getElementById('pkb-nama').innerText = data.nama_lengkap;
-            document.getElementById('pkb-nip').innerText = data.nip;
-            document.getElementById('pkb-jabatan').innerText = gelarJabatan;
-            document.getElementById('pkb-wilayah').innerText = wilayahKerja;
-            
-            document.getElementById('profil-subtitle').innerText = gelarJabatan;
-
-            document.getElementById('edit-nama').value = data.nama_lengkap;
-            document.getElementById('edit-nip').value = data.nip;
-            document.getElementById('edit-jabatan').value = data.jabatan;
-            document.getElementById('edit-wilayah').value = wilayahKerja;
-
-            siapkanBeranda(data.nama_lengkap);
-            masukHalamanRole('pkb', data.nama_lengkap);
+            // Simpan Sesi Login ke LocalStorage
+            localStorage.setItem('sesi_portal_pkb', JSON.stringify(data));
+            pulihkanSesi(data);
         }
     } catch (e) { memunculkanErrorLogin(); }
 };
@@ -241,6 +239,7 @@ function memunculkanErrorLogin(customMsg) {
 
 function masukHalamanRole(role, namaHeader) {
     document.getElementById('view-login').style.display = 'none';
+    document.getElementById('view-dasbor-publik').style.display = 'none'; // Sembunyikan dasbor publik juga
     document.getElementById('inputUser').value = ''; document.getElementById('inputPass').value = '';
     
     const btnHeader = document.getElementById('btn-auth-action');
@@ -258,7 +257,7 @@ function masukHalamanRole(role, namaHeader) {
 }
 
 // ==========================================================================
-// 5. NAVIGASI PORTAL, AKSESIBILITAS & MANAJEMEN FORM
+// 5. NAVIGASI PORTAL, KOTAK SARAN & MANAJEMEN FORM
 // ==========================================================================
 window.pindahTabPortal = function(tabId) {
     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
@@ -282,8 +281,8 @@ window.simpanProfilKeServer = function() {
     batalEditProfil(); 
 };
 
-// Fungsi Baru: Mengirim Saran Pengguna
-window.kirimSaranPengguna = function() {
+// Fungsi Mengirim Saran Pengguna (Berfungsi Nyata ke Supabase)
+window.kirimSaranPengguna = async function() {
     const kategori = document.getElementById('kategori-saran').value;
     const isi = document.getElementById('isi-saran').value.trim();
     
@@ -291,10 +290,36 @@ window.kirimSaranPengguna = function() {
         alert("Silakan ketik pesan Anda terlebih dahulu sebelum mengirim.");
         return;
     }
-    
-    // Simulasi pengiriman sukses
-    alert(`Terima kasih! Masukan Anda untuk kategori "${kategori}" telah berhasil dikirim ke server pusat.`);
-    document.getElementById('isi-saran').value = ''; // Reset kotak isian
+
+    // Ambil data user dari sesi (Agar tidak bisa dipalsukan)
+    const sesiPkb = JSON.parse(localStorage.getItem('sesi_portal_pkb'));
+    if(!sesiPkb) return;
+
+    // Ubah status tombol
+    const btnKirim = document.getElementById('btn-kirim-saran');
+    const textAsli = btnKirim.innerText;
+    btnKirim.innerText = "Mengirim...";
+    btnKirim.disabled = true;
+
+    try {
+        const { error } = await mySupabase.rpc('simpan_saran', {
+            p_nip: sesiPkb.nip,
+            p_nama: sesiPkb.nama_lengkap,
+            p_kategori: kategori,
+            p_isi: isi
+        });
+
+        if (error) throw error;
+        
+        alert(`Terima kasih! Masukan Anda untuk kategori "${kategori}" telah berhasil dikirim ke server pusat.`);
+        document.getElementById('isi-saran').value = ''; // Kosongkan form
+    } catch(err) {
+        console.error(err);
+        alert("Terjadi kesalahan saat mengirim saran. Silakan periksa koneksi Anda.");
+    } finally {
+        btnKirim.innerText = textAsli;
+        btnKirim.disabled = false;
+    }
 };
 
 window.bukaFileFullscreen = function(filename) {
@@ -315,4 +340,13 @@ window.ubahSkalaZoom = function(aksi) {
     document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`);
 };
 
-window.addEventListener('DOMContentLoaded', tarikDataDasbor);
+// INISIALISASI APLIKASI (Mengecek F5 Session Terlebih Dahulu)
+window.addEventListener('DOMContentLoaded', () => {
+    const sesiAktif = localStorage.getItem('sesi_portal_pkb');
+    if (sesiAktif) {
+        document.getElementById('loading-screen').style.display = 'none'; // Matikan loading publik
+        pulihkanSesi(JSON.parse(sesiAktif)); // Langsung masuk Portal
+    } else {
+        tarikDataDasbor(); // Jika tidak ada sesi, muat dasbor publik
+    }
+});
