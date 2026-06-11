@@ -5,16 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard PenyuluhKB</title>
     <style>
-        :root { --bg-primary: #f0f2f5; --bg-card: #ffffff; --text-main: #333333; --text-muted: #6c757d; --border-color: #dee2e6; --base-font-size: 100%; }
-        [data-theme="dark"] { --bg-primary: #1a1a1a; --bg-card: #2d2d2d; --text-main: #ffffff; --text-muted: #b0b0b0; --border-color: #404040; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-primary); color: var(--text-main); margin: 0; padding-bottom: 60px; font-size: var(--base-font-size); transition: background 0.3s, color 0.3s; }
+        /* === VARIABEL TEMA & FONT BASE === */
+        :root { 
+            --bg-primary: #f0f2f5; 
+            --bg-card: #ffffff; 
+            --text-main: #333333; 
+            --text-muted: #6c757d; 
+            --border-color: #dee2e6; 
+            --base-font-size: 100%; 
+        }
+        [data-theme="dark"] { 
+            --bg-primary: #1a1a1a; 
+            --bg-card: #2d2d2d; 
+            --text-main: #ffffff; 
+            --text-muted: #b0b0b0; 
+            --border-color: #404040; 
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-primary); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding-bottom: 60px; 
+            font-size: var(--base-font-size); 
+            transition: background 0.3s, color 0.3s; 
+        }
         
+        /* === HEADER & FOOTER === */
         .header { background-color: #0056b3; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .header h1 { margin: 0; font-size: 1.2rem; }
         .btn-login-nav { background-color: white; color: #0056b3; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .footer { background-color: #0056b3; color: white; text-align: center; padding: 12px; font-size: 0.9rem; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; box-sizing: border-box; }
 
+        /* === LAYOUT UTAMA === */
         .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; width: 100%; box-sizing: border-box; }
+        
+        /* === KOMPONEN DASBOR PUBLIK === */
         .cakupan-status { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #28a745; }
         .cakupan-status h2 { margin: 0; font-size: 1.2rem; }
         .btn-reset { background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; display: none; }
@@ -25,50 +52,81 @@
         .card.danger { border-top: 4px solid #dc3545; }
         .card.gender { border-top: 4px solid #17a2b8; }
         .card h3 { margin: 0; color: var(--text-muted); font-size: 0.8rem; font-weight: bold; }
-        .card .angka { font-size: 1.8rem; font-weight: bold; color: #333; margin: 10px 0 0 0; }
+        .card .angka { font-size: 1.8rem; font-weight: bold; color: var(--text-main); margin: 10px 0 0 0; }
 
         .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } .dua-kolom-grid { grid-template-columns: 1fr; } .empat-kolom-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
         .panel { background: var(--bg-card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .panel h2 { margin-top: 0; font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+        .panel h2 { margin-top: 0; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; color: var(--text-main); }
         .canvas-container { position: relative; height: 320px; width: 100%; }
         .scrollable-panel { overflow-y: auto; max-height: 320px; border: 1px solid var(--border-color); border-radius: 4px; }
         .canvas-container-tall { position: relative; height: 1000px; width: 100%; }
 
+        /* === FORM LOGIN === */
         .login-box { background: var(--bg-card); padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; display: none; }
         .login-box h2 { margin-top: 0; text-align: center; font-size: 1.5rem; }
-        input[type="text"], input[type="password"], input[type="date"], input[type="number"], select, textarea { width: 100%; padding: 10px; margin: 8px 0 15px 0; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); box-sizing: border-box; font-family: inherit; }
+        input[type="text"], input[type="password"], input[type="date"], input[type="number"], select, textarea { width: 100%; padding: 10px; margin: 8px 0 15px 0; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); box-sizing: border-box; font-family: inherit; font-size: 1rem; }
         input[readonly] { background-color: var(--bg-primary); cursor: not-allowed; }
-        .btn-primary { background-color: #007bff; color: white; border: none; padding: 10px; cursor: pointer; font-weight: bold; width: 100%; border-radius: 4px; margin-top: 10px; }
-        .btn-batal { background-color: transparent; color: var(--text-muted); border: none; cursor: pointer; text-decoration: underline; width: 100%; margin-top: 10px; }
+        .btn-primary { background-color: #007bff; color: white; border: none; padding: 10px; cursor: pointer; font-weight: bold; width: 100%; border-radius: 4px; margin-top: 10px; font-size: 1rem; }
+        .btn-batal { background-color: transparent; color: var(--text-muted); border: none; cursor: pointer; text-decoration: underline; width: 100%; margin-top: 10px; font-size: 1rem; }
         
         .password-wrapper { position: relative; width: 100%; }
         .password-wrapper input { padding-right: 40px; }
         .password-wrapper .toggle-icon { position: absolute; right: 12px; top: 40%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); width: 20px; height: 20px; }
 
+        /* === LAYOUT PORTAL INTERNAL PKB === */
         .portal-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; display: none; }
+        @media (max-width: 768px) { .portal-layout { grid-template-columns: 1fr; } }
+        
+        /* Sidebar Styling Pemulihan */
+        .sidebar { background: var(--bg-card); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: fit-content; }
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+        .sidebar-menu li { padding: 12px 15px; margin-bottom: 5px; border-radius: 4px; cursor: pointer; font-weight: bold; color: var(--text-muted); transition: background-color 0.2s, color 0.2s; display: block; }
+        .sidebar-menu li:hover, .sidebar-menu li.active { background: #0056b3; color: white; }
+
+        /* Grid Internal Portal */
         .dua-kolom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .empat-kolom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
+        @media (max-width: 900px) { .empat-kolom-grid { grid-template-columns: 1fr 1fr; } .dua-kolom-grid { grid-template-columns: 1fr; } }
+        
+        /* CSS Khusus Profil & Form Update */
+        .avatar-container { text-align: center; margin-bottom: 20px; }
+        .avatar-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #0056b3; background: #eee; }
         
         .form-section { border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-bottom: 25px; background: var(--bg-card); }
         .form-section h3 { margin-top: 0; color: #0056b3; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; font-size: 1.1rem; }
-        .form-label { font-size: 0.9rem; font-weight: bold; display: block; color: var(--text-main); }
+        .form-label { font-size: 0.95rem; font-weight: bold; display: block; color: var(--text-main); }
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-top: 5px; margin-bottom: 15px; }
-        .checkbox-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9rem; }
+        .checkbox-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.95rem; }
         .hidden-field { display: none; margin-left: 20px; border-left: 3px solid #17a2b8; padding-left: 15px; margin-bottom: 15px; background: var(--bg-primary); padding-top: 10px; padding-bottom: 1px; border-radius: 0 4px 4px 0; }
 
+        /* CSS Khusus Materi & Peraturan (Telah Dipulihkan) */
+        .kolom-filter { background: var(--bg-primary); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); height: fit-content; }
+        .daftar-item-klik { list-style: none; padding: 0; margin: 0; }
+        .daftar-item-klik li { padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; color: #0056b3; font-weight: 500; font-size: 0.95rem; }
+        .daftar-item-klik li:hover { text-decoration: underline; background: rgba(0,86,179,0.05); }
+
+        /* Tabel & Utility */
         .table-responsive { overflow-x: auto; max-height: 350px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; color: var(--text-main); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; color: var(--text-main); }
         th, td { border-bottom: 1px solid var(--border-color); padding: 12px; text-align: left; }
         th { background-color: var(--bg-primary); position: sticky; top: 0; }
+
+        .fullscreen-viewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
+        .viewer-header { width: 90%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .viewer-body { width: 90%; max-width: 900px; height: 80vh; background: white; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: #333; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #0056b3; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0056b3">
 </head>
 <body>
 
-<div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-    <div style="border: 8px solid #f3f3f3; border-top: 8px solid #0056b3; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite;"></div>
+<div id="loading-screen">
+    <div class="spinner"></div>
     <h3 style="color: #0056b3; margin-top: 20px;">Menyinkronkan Data...</h3>
 </div>
 
@@ -80,6 +138,9 @@
 <div class="main-content">
     <div class="container">
         
+        <!-- ============================================== -->
+        <!-- HALAMAN DASBOR PUBLIK -->
+        <!-- ============================================== -->
         <div id="view-dasbor-publik">
             <div class="cakupan-status"><h2 id="label-cakupan">Data PKB/PLKB : NASIONAL</h2><button id="btn-reset-filter" class="btn-reset" onclick="resetFilter()">Tampilkan Nasional</button></div>
             <div class="kpi-grid">
@@ -91,24 +152,18 @@
                 <div class="card warning"><h3>PENSIUN BLN INI</h3><p class="angka" id="kpi-pensiun-bulan">0</p></div>
                 <div class="card danger"><h3>PENSIUN TH 2026</h3><p class="angka" id="kpi-pensiun-tahun">0</p></div>
             </div>
-            <div class="chart-grid">
-                <div class="panel"><h2>Sebaran Provinsi</h2><div class="scrollable-panel"><div class="canvas-container-tall"><canvas id="chartProvinsi"></canvas></div></div></div>
-                <div class="panel"><h2>Pendidikan Terakhir</h2><div class="canvas-container"><canvas id="chartPendidikan"></canvas></div></div>
-            </div>
-            <div class="chart-grid">
-                <div class="panel"><h2>Kelompok Umur Pegawai</h2><div class="canvas-container"><canvas id="chartUmur"></canvas></div></div>
-                <div class="panel"><h2>Demografi Generasi</h2><div class="canvas-container"><canvas id="chartGenerasi"></canvas></div></div>
-            </div>
-            <div class="chart-grid">
-                <div class="panel"><h2>Golongan Pegawai</h2><div class="canvas-container"><canvas id="chartGolongan"></canvas></div></div>
-                <div class="panel"><h2>Proporsi Jabatan</h2><div class="canvas-container"><canvas id="chartJabatan"></canvas></div></div>
-            </div>
+            <div class="chart-grid"><div class="panel"><h2>Sebaran Provinsi</h2><div class="scrollable-panel"><div class="canvas-container-tall"><canvas id="chartProvinsi"></canvas></div></div></div><div class="panel"><h2>Pendidikan Terakhir</h2><div class="canvas-container"><canvas id="chartPendidikan"></canvas></div></div></div>
+            <div class="chart-grid"><div class="panel"><h2>Kelompok Umur Pegawai</h2><div class="canvas-container"><canvas id="chartUmur"></canvas></div></div><div class="panel"><h2>Demografi Generasi</h2><div class="canvas-container"><canvas id="chartGenerasi"></canvas></div></div></div>
+            <div class="chart-grid"><div class="panel"><h2>Golongan Pegawai</h2><div class="canvas-container"><canvas id="chartGolongan"></canvas></div></div><div class="panel"><h2>Proporsi Jabatan</h2><div class="canvas-container"><canvas id="chartJabatan"></canvas></div></div></div>
             <div class="panel">
                 <h2>Daftar Pensiun Terdekat (2026)</h2>
                 <div class="table-responsive"><table id="tabelPensiun"><thead><tr><th>Nama Lengkap</th><th>Provinsi</th><th>Jabatan</th><th>Tanggal Pensiun</th></tr></thead><tbody></tbody></table></div>
             </div>
         </div>
 
+        <!-- ============================================== -->
+        <!-- PORTAL LOGIN -->
+        <!-- ============================================== -->
         <div id="view-login" class="login-box">
             <h2>Login Portal</h2>
             <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Gunakan User dan Password untuk Masuk.</p>
@@ -125,7 +180,10 @@
         <div id="view-superadmin" style="display: none;"><div class="panel" style="border-top: 4px solid #6f42c1;"><h2>Dashboard Super Admin</h2></div></div>
         <div id="view-admin" style="display: none;"><div class="panel" style="border-top: 4px solid #fd7e14;"><h2>Dashboard Admin Regional</h2></div></div>
 
-        <div id="view-portal-pkb" class="portal-layout" style="display: none; grid-template-columns: 220px 1fr; gap: 20px;">
+        <!-- ============================================== -->
+        <!-- PORTAL UTAMA INTERNAL PKB -->
+        <!-- ============================================== -->
+        <div id="view-portal-pkb" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu">
                     <li class="tab-link active" onclick="pindahTabPortal('beranda')">Beranda</li>
@@ -138,6 +196,7 @@
             </div>
 
             <div class="portal-viewport">
+                <!-- Tab: Beranda -->
                 <div id="tab-beranda" class="panel tab-content">
                     <h2 id="teks-sapaan" style="color: #0056b3; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-sambutan" style="margin-top: 0; color: var(--text-main);">Selamat Datang di Portal PenyuluhKB Indonesia</h3>
@@ -162,12 +221,13 @@
                     </div>
                 </div>
 
+                <!-- Tab: Profil -->
                 <div id="tab-profil" class="panel tab-content" style="display: none;">
                     <div id="view-profil-utama">
                         <h2>Profil Kepegawaian Mandiri</h2>
                         <div class="avatar-container">
                             <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Foto Profil" class="avatar-img">
-                            <p id="profil-subtitle" style="color: var(--text-muted); font-size: 0.85rem; font-weight: bold; margin-top: 8px;">-</p>
+                            <p id="profil-subtitle" style="color: var(--text-muted); font-size: 0.9rem; font-weight: bold; margin-top: 8px;">-</p>
                         </div>
                         <p><strong>Nama Lengkap:</strong> <span id="pkb-nama">-</span></p>
                         <p><strong>Nomor Induk Pegawai (NIP):</strong> <span id="pkb-nip">-</span></p>
@@ -176,6 +236,7 @@
                         <button class="btn-primary" style="background-color: #007bff; margin-top: 20px;" onclick="bukaFormEditProfil()">Update Profil</button>
                     </div>
 
+                    <!-- FORMULIR UPDATE PROFIL 4 BLOK -->
                     <div id="form-edit-profil" style="display: none;">
                         <h2 style="color: #0056b3; border-bottom: 2px solid #0056b3;">Formulir Update Profil</h2>
                         
@@ -301,16 +362,101 @@
                     </div>
                 </div>
 
-                <div id="tab-informasi" class="panel tab-content" style="display: none;"><h2>Pusat Informasi</h2></div>
-                <div id="tab-materi" class="panel tab-content" style="display: none;"><h2>Materi</h2></div>
-                <div id="tab-peraturan" class="panel tab-content" style="display: none;"><h2>Peraturan</h2></div>
-                <div id="tab-pengaturan" class="panel tab-content" style="display: none;"><h2>Pengaturan</h2></div>
+                <!-- Tab: Informasi -->
+                <div id="tab-informasi" class="panel tab-content" style="display: none;">
+                    <h2>Pusat Informasi Instansi</h2>
+                    <div class="dua-kolom-grid">
+                        <div>
+                            <h3 style="margin-top: 0;">Pengumuman Pelaksanaan Pemutakhiran Data 2026</h3>
+                            <p style="color: var(--text-main);">Diberitahukan kepada seluruh tenaga lini lapangan Penyuluh KB and PLKB di seluruh Indonesia untuk segera melakukan verifikasi kevalidan data pada sistem utama.</p>
+                            <p style="color: var(--text-muted); font-size: 0.95rem;">Proses integrasi ini ditargetkan rampung pada akhir bulan Juni 2026 guna mendukung akurasi kebijakan kepegawaian nasional.</p>
+                        </div>
+                        <div>
+                            <img src="https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=500&q=80" alt="Gambar Info" style="width:100%; border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Materi -->
+                <div id="tab-materi" class="panel tab-content" style="display: none;">
+                    <h2>E-Learning & Materi Penyuluhan</h2>
+                    <div class="dua-kolom-grid">
+                        <div class="kolom-filter">
+                            <h4 style="margin-top: 0;">Filter Kelompok Materi</h4>
+                            <label class="form-label">Jenis Kategori:</label>
+                            <select><option>Semua Jenis</option><option>Modul Teknis</option></select>
+                            <label class="form-label">Topik Bahasan:</label>
+                            <select><option>POKTAN (Kelompok Kegiatan)</option><option>PROGRAM PRIORITAS</option></select>
+                        </div>
+                        <div>
+                            <h4 style="margin-top: 0;">Daftar Materi Sesuai Judul</h4>
+                            <ul class="daftar-item-klik">
+                                <li onclick="bukaFileFullscreen('Panduan Teknis Operasional BKB Kit Edisi 2026.pdf')">Panduan Teknis Operasional BKB Kit Edisi 2026</li>
+                                <li onclick="bukaFileFullscreen('Strategi Komunikasi Efektif Penurunan Stunting di Kampung KB.pdf')">Strategi Komunikasi Efektif Penurunan Stunting di Kampung KB</li>
+                                <li onclick="bukaFileFullscreen('Modul Pengelolaan Poktan UPPKA Skala Lini Lapangan.pdf')">Modul Pengelolaan Poktan UPPKA Skala Lini Lapangan</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Peraturan -->
+                <div id="tab-peraturan" class="panel tab-content" style="display: none;">
+                    <h2>Regulasi & Peraturan Kepegawaian</h2>
+                    <div class="dua-kolom-grid">
+                        <div class="kolom-filter">
+                            <h4 style="margin-top: 0;">Filter Regulasi</h4>
+                            <label class="form-label">Jenis Peraturan:</label>
+                            <select><option>Undang-Undang / Perka</option></select>
+                            <label class="form-label">Tahun Terbit:</label>
+                            <select><option>2026</option><option>2025</option></select>
+                        </div>
+                        <div>
+                            <h4 style="margin-top: 0;">Daftar Dokumen Hukum</h4>
+                            <ul class="daftar-item-klik">
+                                <li onclick="bukaFileFullscreen('Perka BKKBN Nomor 12 Tahun 2026 tentang Jabfung PKB.pdf')">Perka BKKBN Nomor 12 Tahun 2026 tentang Jabfung PKB</li>
+                                <li onclick="bukaFileFullscreen('Undang-Undang Perkembangan Kependudukan Indonesia.pdf')">Undang-Undang Perkembangan Kependudukan Indonesia</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Pengaturan -->
+                <div id="tab-pengaturan" class="panel tab-content" style="display: none;">
+                    <h2>Pengaturan Aplikasi & Aksesibilitas</h2>
+                    
+                    <h3 style="color: #0056b3;">Akses Keamanan</h3>
+                    <label class="form-label">Ganti Kata Sandi / Password Baru:</label>
+                    <input type="password" placeholder="Masukkan Password Baru Anda">
+                    <button class="btn-primary" style="width: auto; padding: 8px 20px;" onclick="alert('Kata sandi berhasil diperbarui!')">Perbarui Sandi</button>
+                    
+                    <hr style="margin: 25px 0; border: 0; border-top: 1px solid var(--border-color);">
+                    
+                    <h3 style="color: #0056b3;">Kenyamanan Visual (Aksesibilitas)</h3>
+                    <p style="font-size: 0.95rem; color: var(--text-muted);">Sesuaikan tampilan sistem agar sesuai dengan kenyamanan mata Anda.</p>
+                    
+                    <label class="form-label">Tema Warna Aplikasi:</label>
+                    <select id="setting-theme" onchange="ubahTemaAplikasi(this.value)">
+                        <option value="light">Mode Terang (Default)</option>
+                        <option value="dark">Mode Gelap (Dark Mode)</option>
+                    </select>
+                    
+                    <label class="form-label" style="margin-top: 15px; display: block;">Skala Ukuran Teks (Zoom):</label>
+                    <div style="display: flex; gap: 10px; margin-top: 5px;">
+                        <button class="btn-primary" style="width: 50px; margin:0; font-size: 1.2rem;" onclick="ubahSkalaZoom('-')">-</button>
+                        <button class="btn-primary" style="width: 50px; margin:0; background-color:#6c757d; font-size: 1.2rem;" onclick="ubahSkalaZoom('0')">0</button>
+                        <button class="btn-primary" style="width: 50px; margin:0; font-size: 1.2rem;" onclick="ubahSkalaZoom('+')">+</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<div id="viewer-overlay" class="fullscreen-viewer"><div class="viewer-header"><span id="viewer-filename"></span><button class="btn-reset" onclick="tutupFileFullscreen()">Tutup Pembaca</button></div><div class="viewer-body" id="viewer-body-content"></div></div>
 <div class="footer">PenyuluhKB&copy;2026</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/chart.js@4"></script>
 <script src="app.js"></script>
 </body>
 </html>
