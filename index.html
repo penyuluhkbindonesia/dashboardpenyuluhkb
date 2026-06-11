@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard PenyuluhKB</title>
     <style>
-        /* CSS Variables untuk Fitur Tema Gelap/Terang dan Skala Zoom */
         :root {
             --bg-primary: #f0f2f5;
             --bg-card: #ffffff;
@@ -33,7 +32,6 @@
             transition: background 0.3s, color 0.3s;
         }
         
-        /* Header & Footer Sticky */
         .header { background-color: #0056b3; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .header h1 { margin: 0; font-size: 1.2rem; }
         .btn-login-nav { background-color: white; color: #0056b3; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
@@ -44,7 +42,6 @@
         .cakupan-status h2 { margin: 0; font-size: 1.2rem; }
         .btn-reset { background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; display: none; }
 
-        /* Grid Komponen Dasbor Publik */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .card { background: var(--bg-card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #0056b3; }
         .card.warning { border-top: 4px solid #ffc107; }
@@ -61,19 +58,17 @@
         .scrollable-panel { overflow-y: auto; max-height: 320px; border: 1px solid var(--border-color); border-radius: 4px; }
         .canvas-container-tall { position: relative; height: 1000px; width: 100%; }
 
-        /* Form Login Master */
         .login-box { background: var(--bg-card); padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; display: none; }
         .login-box h2 { margin-top: 0; text-align: center; font-size: 1.5rem; }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); box-sizing: border-box; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); box-sizing: border-box; font-family: inherit; }
+        input[readonly] { background-color: var(--bg-primary); cursor: not-allowed; }
         .btn-primary { background-color: #007bff; color: white; border: none; padding: 10px; cursor: pointer; font-weight: bold; width: 100%; border-radius: 4px; margin-top: 10px; }
         .btn-batal { background-color: transparent; color: var(--text-muted); border: none; cursor: pointer; text-decoration: underline; width: 100%; margin-top: 10px; }
         
-        /* Tambahan CSS: Pembungkus untuk ikon Show/Hide Password */
         .password-wrapper { position: relative; width: 100%; }
-        .password-wrapper input { padding-right: 40px; /* Ruang untuk ikon mata */ }
+        .password-wrapper input { padding-right: 40px; }
         .password-wrapper .toggle-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); width: 20px; height: 20px; }
 
-        /* Tata Letak Multi Kolom Menu Internal (Portal PKB) */
         .portal-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; display: none; }
         @media (max-width: 768px) { .portal-layout { grid-template-columns: 1fr; } }
         
@@ -124,6 +119,7 @@
 <div class="main-content">
     <div class="container">
         
+        <!-- HALAMAN 1: INTERFASE DASBOR PUBLIK -->
         <div id="view-dasbor-publik">
             <div class="cakupan-status">
                 <h2 id="label-cakupan">Data PKB/PLKB : NASIONAL</h2>
@@ -172,12 +168,12 @@
             </div>
         </div>
 
+        <!-- HALAMAN 2: PORTAL FORMULIR AUTENTIKASI -->
         <div id="view-login" class="login-box">
             <h2>Login Portal</h2>
             <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Gunakan User dan Password untuk Masuk.</p>
             
             <input type="text" id="inputUser" placeholder="Masukkan user anda" required>
-            
             <div class="password-wrapper">
                 <input type="password" id="inputPass" placeholder="Masukkan Password" required>
                 <svg class="toggle-icon" id="togglePasswordIcon" onclick="togglePasswordVisibility()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -190,36 +186,30 @@
             <p id="pesan-error" style="color: red; display: none; text-align: center; font-size: 0.9rem; margin-top: 15px;"></p>
         </div>
 
+        <!-- HALAMAN 3: DASHBOARD SUPER ADMIN -->
         <div id="view-superadmin" style="display: none;">
             <div class="panel" style="border-top: 4px solid #6f42c1;">
                 <h2>Panel Pusat: Dashboard Super Admin</h2>
-                <p>Selamat datang <strong>Super Admin Utama</strong>. Kendali basis data nasional berada di bawah hak akses Anda.</p>
-                <div style="background: #e2e3e5; padding: 20px; border-radius: 6px; margin-top: 15px; color: #383d41;">
-                    <h4>Fungsi Manajemen Sistem:</h4>
-                    <ul>
-                        <li>Konfigurasi Global Server Supabase</li>
-                        <li>Audit Log Sinkronisasi Otomatis Seluruh Wilayah Indonesia</li>
-                        <li>Manajemen Akun Administrator Tingkat Provinsi dan Kabupaten</li>
-                    </ul>
-                </div>
+                <p>Selamat datang <strong>Super Admin Utama</strong>.</p>
             </div>
         </div>
 
+        <!-- HALAMAN 4: DASHBOARD ADMIN REGIONAL -->
         <div id="view-admin" style="display: none;">
             <div class="panel" style="border-top: 4px solid #fd7e14;">
                 <h2 id="title-admin-regional">Dashboard Admin PenyuluhKB Regional</h2>
-                <p>Selamat datang Pengelola Kepegawaian Wilayah. Gunakan panel ini untuk melakukan validasi.</p>
-                <div style="background: #fff3cd; padding: 20px; border-radius: 6px; margin-top: 15px; color: #856404; border: 1px solid #ffeeba;">
-                    <h4>Antrean Persetujuan Pembaruan Profil Mandiri PKB/PLKB:</h4>
-                    <p style="font-size: 0.9rem; margin-bottom: 0;">Saat ini belum ada pengajuan baru yang membutuhkan persetujuan berkas fisik dari wilayah Anda.</p>
-                </div>
+                <p>Selamat datang Pengelola Kepegawaian Wilayah.</p>
             </div>
         </div>
 
+        <!-- HALAMAN 5: PORTAL UTAMA PENYULUHKB (MEMBER) -->
         <div id="view-portal-pkb" class="portal-layout">
+            
+            <!-- Menu Samping yang Diperbarui -->
             <div class="sidebar">
                 <ul class="sidebar-menu">
-                    <li class="tab-link active" onclick="pindahTabPortal('profil')">Profil Saya</li>
+                    <li class="tab-link active" onclick="pindahTabPortal('beranda')">Beranda</li>
+                    <li class="tab-link" onclick="pindahTabPortal('profil')">Profil Saya</li>
                     <li class="tab-link" onclick="pindahTabPortal('informasi')">Informasi</li>
                     <li class="tab-link" onclick="pindahTabPortal('materi')">Materi</li>
                     <li class="tab-link" onclick="pindahTabPortal('peraturan')">Peraturan</li>
@@ -228,26 +218,65 @@
             </div>
 
             <div class="portal-viewport">
-                <div id="tab-profil" class="panel tab-content">
-                    <h2>Profil Kepegawaian Mandiri</h2>
-                    <div class="avatar-container">
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Foto Profil" class="avatar-img">
-                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">PenyuluhKB Profesional</p>
-                    </div>
-                    <p><strong>Nama Lengkap:</strong> <span id="pkb-nama">-</span></p>
-                    <p><strong>Nomor Induk Pegawai (NIP):</strong> <span id="pkb-nip">-</span></p>
-                    <p><strong>Jabatan Fungsional:</strong> <span id="pkb-jabatan">-</span></p>
-                    <p><strong>Wilayah Kerja:</strong> <span id="pkb-wilayah">-</span></p>
-                    <button class="btn-primary" style="background-color: #28a745;" onclick="simpanPembaruanProfilDummy()">Simpan / Update Profil</button>
+                
+                <!-- Tab Baru: Beranda -->
+                <div id="tab-beranda" class="panel tab-content">
+                    <h2 id="teks-sapaan" style="color: #0056b3; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
+                    <h3 id="teks-sambutan" style="margin-top: 0; color: var(--text-main);">Selamat Datang di Portal PenyuluhKB</h3>
+                    <p style="line-height: 1.6; color: var(--text-muted); margin-top: 15px;">
+                        Ini adalah aplikasi mandiri yang dibangun PenyuluhKB Indonesia sebagai pusat informasi, materi pembinaan, regulasi kepegawaian, dan pengelolaan profil secara terintegrasi. Jelajahi berbagai menu di panel sebelah kiri untuk mendukung dan mempermudah pelaporan administrasi serta capaian program Bangga Kencana di lini lapangan.
+                    </p>
                 </div>
 
+                <!-- Tab A: Profil -->
+                <div id="tab-profil" class="panel tab-content" style="display: none;">
+                    
+                    <!-- Area Tampilan Profil -->
+                    <div id="view-profil-utama">
+                        <h2>Profil Kepegawaian Mandiri</h2>
+                        <div class="avatar-container">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Foto Profil" class="avatar-img">
+                            <p id="profil-subtitle" style="color: var(--text-muted); font-size: 0.85rem; font-weight: bold; margin-top: 8px;">PenyuluhKB Profesional</p>
+                        </div>
+                        <p><strong>Nama Lengkap:</strong> <span id="pkb-nama">-</span></p>
+                        <p><strong>Nomor Induk Pegawai (NIP):</strong> <span id="pkb-nip">-</span></p>
+                        <p><strong>Jabatan Fungsional:</strong> <span id="pkb-jabatan">-</span></p>
+                        <p><strong>Wilayah Kerja:</strong> <span id="pkb-wilayah">-</span></p>
+                        <button class="btn-primary" style="background-color: #28a745; margin-top: 20px;" onclick="bukaFormEditProfil()">Update Profil</button>
+                    </div>
+
+                    <!-- Area Formulir Edit Profil (Awalnya Tersembunyi) -->
+                    <div id="form-edit-profil" style="display: none;">
+                        <h2 style="color: #0056b3; border-bottom: 2px solid #0056b3;">Formulir Update Profil</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Silakan sesuaikan data yang perlu diperbarui. Data NIP tidak dapat diubah secara mandiri.</p>
+                        
+                        <label>Nama Lengkap:</label>
+                        <input type="text" id="edit-nama">
+                        
+                        <label>NIP:</label>
+                        <input type="text" id="edit-nip" readonly title="NIP tidak dapat diubah">
+                        
+                        <label>Jabatan Fungsional:</label>
+                        <input type="text" id="edit-jabatan">
+                        
+                        <label>Wilayah Kerja:</label>
+                        <input type="text" id="edit-wilayah">
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button class="btn-primary" style="background-color: #28a745; margin-top: 0;" onclick="simpanProfilKeServer()">Ajukan Perubahan</button>
+                            <button class="btn-primary" style="background-color: #dc3545; margin-top: 0;" onclick="batalEditProfil()">Batal</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Tab B: Informasi -->
                 <div id="tab-informasi" class="panel tab-content" style="display: none;">
                     <h2>Pusat Informasi Instansi</h2>
                     <div class="dua-kolom-grid">
                         <div>
                             <h3>Pengumuman Pelaksanaan Pemutakhiran Data 2026</h3>
                             <p>Diberitahukan kepada seluruh tenaga lini lapangan Penyuluh KB and PLKB di seluruh Indonesia untuk segera melakukan verifikasi kevalidan data pada sistem utama.</p>
-                            <p>Proses integrasi ini ditargetkan rampung pada akhir bulan Juni 2026 guna mendukung akurasi kebijakan kepegawaian nasional.</p>
                         </div>
                         <div>
                             <img src="https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=500&q=80" alt="Gambar Info" style="width:100%; border-radius:6px;">
@@ -255,6 +284,7 @@
                     </div>
                 </div>
 
+                <!-- Tab C: Materi -->
                 <div id="tab-materi" class="panel tab-content" style="display: none;">
                     <h2>E-Learning & Materi Penyuluhan</h2>
                     <div class="dua-kolom-grid">
@@ -270,12 +300,12 @@
                             <ul class="daftar-item-klik">
                                 <li onclick="bukaFileFullscreen('Panduan Teknis Operasional BKB Kit Edisi 2026.pdf')">Panduan Teknis Operasional BKB Kit Edisi 2026</li>
                                 <li onclick="bukaFileFullscreen('Strategi Komunikasi Efektif Penurunan Stunting di Kampung KB.pdf')">Strategi Komunikasi Efektif Penurunan Stunting di Kampung KB</li>
-                                <li onclick="bukaFileFullscreen('Modul Pengelolaan Poktan UPPKA Skala Lini Lapangan.pdf')">Modul Pengelolaan Poktan UPPKA Skala Lini Lapangan</li>
                             </ul>
                         </div>
                     </div>
                 </div>
 
+                <!-- Tab D: Peraturan -->
                 <div id="tab-peraturan" class="panel tab-content" style="display: none;">
                     <h2>Regulasi & Peraturan Kepegawaian</h2>
                     <div class="dua-kolom-grid">
@@ -296,6 +326,7 @@
                     </div>
                 </div>
 
+                <!-- Tab E: Pengaturan -->
                 <div id="tab-pengaturan" class="panel tab-content" style="display: none;">
                     <h2>Pengaturan Aplikasi & Aksesibilitas</h2>
                     <h3>Akses Keamanan</h3>
@@ -304,7 +335,6 @@
                     <button class="btn-primary" style="width: auto; padding: 8px 20px;" onclick="alert('Kata sandi berhasil diperbarui!')">Perbarui Sandi</button>
                     <hr style="margin: 25px 0; border: 0; border-top: 1px solid var(--border-color);">
                     <h3>Kenyamanan Visual (Aksesibilitas)</h3>
-                    <p>Sesuaikan tampilan sistem agar sesuai dengan kenyamanan mata Anda.</p>
                     <label>Tema Warna Aplikasi:</label>
                     <select id="setting-theme" onchange="ubahTemaAplikasi(this.value)">
                         <option value="light">Mode Terang (Default)</option>
