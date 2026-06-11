@@ -129,21 +129,17 @@ function gambarChartGolongan(goData) {
 window.resetFilter = function() { filterProvinsiAktif = null; tarikDataDasbor(); };
 
 // ==========================================================================
-// 4. SISTEM OTENTIKASI SECURE (PENGHAPUSAN DROPDOWN ROLE)
+// 4. SISTEM OTENTIKASI & PENGATURAN BERANDA
 // ==========================================================================
-
-// Fungsi baru untuk melihat/menyembunyikan password
 window.togglePasswordVisibility = function() {
     const passInput = document.getElementById('inputPass');
     const iconPath = document.getElementById('eye-icon-path');
     
     if (passInput.type === 'password') {
         passInput.type = 'text';
-        // Ubah jadi ikon mata dicoret (eye-slash)
         iconPath.setAttribute('d', 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21');
     } else {
         passInput.type = 'password';
-        // Ubah kembali ke ikon mata normal
         iconPath.setAttribute('d', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z');
     }
 };
@@ -160,7 +156,6 @@ window.navigasiLoginAtauKeluar = function() {
     } else {
         document.getElementById('view-dasbor-publik').style.display = 'none';
         document.getElementById('view-login').style.display = 'block';
-        // Menyembunyikan tombol header saat berada di halaman login
         btn.style.display = 'none'; 
     }
 };
@@ -169,12 +164,34 @@ window.kembaliKeDasborPublik = function() {
     document.getElementById('view-login').style.display = 'none';
     document.getElementById('view-dasbor-publik').style.display = 'block';
     document.getElementById('pesan-error').style.display = 'none';
-    // Menampilkan kembali tombol header saat kembali ke dasbor
     document.getElementById('btn-auth-action').style.display = 'block'; 
 };
 
+// Fungsi Mengatur Sapaan Beranda Dinamis (Berdasarkan Jam & Rekam Jejak)
+function siapkanBeranda(namaLengkap) {
+    const jamSekarang = new Date().getHours();
+    let sapaan = 'Malam';
+    
+    if (jamSekarang >= 3 && jamSekarang < 11) sapaan = 'Pagi';
+    else if (jamSekarang >= 11 && jamSekarang < 15) sapaan = 'Siang';
+    else if (jamSekarang >= 15 && jamSekarang < 18) sapaan = 'Sore';
+    else sapaan = 'Malam';
+
+    document.getElementById('teks-sapaan').innerText = `Selamat ${sapaan}, ${namaLengkap}`;
+
+    // Memanfaatkan localStorage untuk mengingat kunjungan
+    const sudahPernahMasuk = localStorage.getItem('statusKunjunganPortal');
+    const teksSambutan = document.getElementById('teks-sambutan');
+
+    if (sudahPernahMasuk) {
+        teksSambutan.innerText = "Selamat Datang Kembali di Portal PenyuluhKB";
+    } else {
+        teksSambutan.innerText = "Selamat Datang di Portal PenyuluhKB";
+        localStorage.setItem('statusKunjunganPortal', 'true');
+    }
+}
+
 window.eksekusiLogin = async function() {
-    // Karena dropdown dihapus, kita ambil murni dari input yang diketik pengguna
     const user = document.getElementById('inputUser').value.trim();
     const pass = document.getElementById('inputPass').value;
     const err = document.getElementById('pesan-error');
@@ -182,30 +199,40 @@ window.eksekusiLogin = async function() {
 
     if (!user || !pass) return;
 
-    // 1. Cek Apakah Dia Super Admin
     if (user === 'superadmin' && pass === 'admin') {
         masukHalamanRole('superadmin', 'Super Admin Pusat');
         return;
     } 
     
-    // 2. Cek Apakah Dia Admin Regional
     if (user === 'admin' && pass === 'admin') {
         masukHalamanRole('admin', 'Admin Regional');
         return;
     } 
     
-    // 3. Jika bukan keduanya, asumsikan ini adalah PKB/PLKB yang sedang login
     try {
         const { data, error } = await mySupabase.rpc('otentikasi_pegawai', { p_nip: user });
         if (error || !data) { 
             memunculkanErrorLogin("Username/NIP Tidak Ditemukan atau Password Salah!"); 
         } else {
-            // Catatan: Saat ini validasi password untuk PKB belum disetel di tabel database Anda.
-            // Sistem masih menganggap login sukses jika NIP valid di Supabase. 
+            const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
+            const wilayahKerja = (data.kabupaten || '') + ", " + data.provinsi;
+
+            // Memasukkan data ke kartu Tampilan Profil
             document.getElementById('pkb-nama').innerText = data.nama_lengkap;
             document.getElementById('pkb-nip').innerText = data.nip;
-            document.getElementById('pkb-jabatan').innerText = data.jabatan + " (" + (data.golongan || '-') + ")";
-            document.getElementById('pkb-wilayah').innerText = (data.kabupaten || '') + ", " + data.provinsi;
+            document.getElementById('pkb-jabatan').innerText = gelarJabatan;
+            document.getElementById('pkb-wilayah').innerText = wilayahKerja;
+            
+            // Re-label text di bawah foto menjadi jabatan asli
+            document.getElementById('profil-subtitle').innerText = gelarJabatan;
+
+            // Menyiapkan data bawaan (pre-filled) untuk Form Update Profil
+            document.getElementById('edit-nama').value = data.nama_lengkap;
+            document.getElementById('edit-nip').value = data.nip;
+            document.getElementById('edit-jabatan').value = data.jabatan;
+            document.getElementById('edit-wilayah').value = wilayahKerja;
+
+            siapkanBeranda(data.nama_lengkap);
             masukHalamanRole('pkb', data.nama_lengkap);
         }
     } catch (e) { memunculkanErrorLogin(); }
@@ -221,7 +248,6 @@ function masukHalamanRole(role, namaHeader) {
     document.getElementById('view-login').style.display = 'none';
     document.getElementById('inputUser').value = ''; document.getElementById('inputPass').value = '';
     
-    // Munculkan kembali tombol header dan ubah jadi tombol keluar
     const btnHeader = document.getElementById('btn-auth-action');
     btnHeader.style.display = 'block';
     btnHeader.innerText = "Keluar Sesi";
@@ -232,12 +258,13 @@ function masukHalamanRole(role, namaHeader) {
     if (role === 'admin') document.getElementById('view-admin').style.display = 'block';
     if (role === 'pkb') {
         document.getElementById('view-portal-pkb').style.display = 'grid';
-        pindahTabPortal('profil');
+        // Arahkan otomatis ke Menu Beranda
+        pindahTabPortal('beranda');
     }
 }
 
 // ==========================================================================
-// 5. NAVIGASI PORTAL & AKSESIBILITAS
+// 5. NAVIGASI PORTAL, AKSESIBILITAS & MANAJEMEN FORM
 // ==========================================================================
 window.pindahTabPortal = function(tabId) {
     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
@@ -245,14 +272,31 @@ window.pindahTabPortal = function(tabId) {
     document.getElementById(`tab-${tabId}`).style.display = 'block';
     if (event && event.currentTarget) event.currentTarget.classList.add('active');
 };
-window.simpanPembaruanProfilDummy = function() { alert("Pembaharuan Profil Memerlukan Persetujuan Admin."); };
+
+window.bukaFormEditProfil = function() {
+    document.getElementById('view-profil-utama').style.display = 'none';
+    document.getElementById('form-edit-profil').style.display = 'block';
+};
+
+window.batalEditProfil = function() {
+    document.getElementById('form-edit-profil').style.display = 'none';
+    document.getElementById('view-profil-utama').style.display = 'block';
+};
+
+window.simpanProfilKeServer = function() {
+    alert("Pembaharuan Profil Memerlukan Persetujuan Admin.");
+    batalEditProfil(); // Tutup form setelah disimulasikan menyimpan
+};
+
 window.bukaFileFullscreen = function(filename) {
     document.getElementById('viewer-filename').innerText = filename;
     document.getElementById('viewer-body-content').innerText = `[ Sedang Membaca Berkas Fullscreen: ${filename} ]`;
     document.getElementById('viewer-overlay').style.display = 'flex';
 };
+
 window.tutupFileFullscreen = function() { document.getElementById('viewer-overlay').style.display = 'none'; };
 window.ubahTemaAplikasi = function(theme) { document.documentElement.setAttribute('data-theme', theme); };
+
 window.ubahSkalaZoom = function(aksi) {
     if (aksi === '+') currentZoomLevel += 10;
     else if (aksi === '-') currentZoomLevel -= 10;
@@ -262,5 +306,4 @@ window.ubahSkalaZoom = function(aksi) {
     document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`);
 };
 
-// MULAI APLIKASI
 window.addEventListener('DOMContentLoaded', tarikDataDasbor);
