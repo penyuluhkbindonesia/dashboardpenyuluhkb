@@ -5,6 +5,10 @@ const SUPABASE_URL = 'https://cdnqqrjbdhoglvlqbxoq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbnFxcmpiZGhvZ2x2bHFieG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDQ1NDIsImV4cCI6MjA5NjU4MDU0Mn0.dHQbkEIJe5L4bfyJqZkJkXTPX0Abot4GBw7_4O3eNwk';
 const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const SUPABASE_URL = 'https://GANTI_DENGAN_PROJECT_URL_ANDA.supabase.co';
+const SUPABASE_ANON_KEY = 'GANTI_DENGAN_ANON_KEY_ANDA';
+const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 let filterProvinsiAktif = null;
 let currentZoomLevel = 100; 
 
@@ -25,7 +29,6 @@ function formatTanggalIndo(tglStr) {
 async function tarikDataDasbor() {
     document.getElementById('loading-screen').style.display = 'flex';
     try {
-        // Kita tidak lagi menyedot puluhan ribu data! Kita hanya menanyakan hasil rekap ke Server.
         const { data, error } = await mySupabase.rpc('get_rekap_dasbor', { p_provinsi: filterProvinsiAktif });
         if (error) throw error;
         renderVisualDasbor(data);
@@ -36,9 +39,9 @@ async function tarikDataDasbor() {
 }
 
 function renderVisualDasbor(dataServer) {
-    // 1. Update Label & Tombol Filter
     const labelCakupan = document.getElementById('label-cakupan');
     const btnReset = document.getElementById('btn-reset-filter');
+
     if (filterProvinsiAktif) {
         labelCakupan.innerHTML = `Data PKB/PLKB : <span style="color:#0056b3;">PROVINSI ${filterProvinsiAktif}</span>`;
         btnReset.style.display = 'block';
@@ -47,7 +50,6 @@ function renderVisualDasbor(dataServer) {
         btnReset.style.display = 'none';
     }
 
-    // 2. Tembak Angka KPI Langsung
     const kpi = dataServer.kpi;
     document.getElementById('kpi-total').innerText = formatAngka(kpi.total);
     document.getElementById('kpi-pns').innerText = formatAngka(kpi.pns);
@@ -57,7 +59,6 @@ function renderVisualDasbor(dataServer) {
     document.getElementById('kpi-pensiun-bulan').innerText = formatAngka(kpi.pensiun_bln_ini);
     document.getElementById('kpi-pensiun-tahun').innerText = formatAngka(kpi.pensiun_thn_ini);
 
-    // 3. Olah Data Tahun Lahir menjadi Umur & Generasi di Client
     let umurCount = { '< 30': 0, '30-39': 0, '40-49': 0, '50-59': 0, '60+': 0 };
     let generasiCount = { 'Gen Z': 0, 'Milenial': 0, 'Gen X': 0, 'Baby Boomer': 0 };
     
@@ -65,7 +66,6 @@ function renderVisualDasbor(dataServer) {
         Object.entries(dataServer.tahun_lahir).forEach(([thnStr, jml]) => {
             const thn = parseInt(thnStr);
             const usia = 2026 - thn;
-            
             if (usia < 30) umurCount['< 30'] += jml;
             else if (usia <= 39) umurCount['30-39'] += jml;
             else if (usia <= 49) umurCount['40-49'] += jml;
@@ -79,7 +79,6 @@ function renderVisualDasbor(dataServer) {
         });
     }
 
-    // 4. Render Tabel Pensiun
     const tbodyPensiun = document.querySelector('#tabelPensiun tbody');
     tbodyPensiun.innerHTML = '';
     if (dataServer.tabel_pensiun) {
@@ -90,7 +89,6 @@ function renderVisualDasbor(dataServer) {
         });
     }
 
-    // 5. Gambar Ulang Grafik
     if(dataServer.sebaran_provinsi) gambarChartProvinsi(dataServer.sebaran_provinsi);
     if(dataServer.pendidikan) gambarChartPendidikan(dataServer.pendidikan);
     if(dataServer.golongan) gambarChartGolongan(dataServer.golongan);
@@ -106,10 +104,7 @@ function gambarChartProvinsi(provData) {
     const ctx = document.getElementById('chartProvinsi').getContext('2d'); if (chartProvInstance) chartProvInstance.destroy();
     const sortedProv = Object.entries(provData).sort((a, b) => b[1] - a[1]);
     const labels = sortedProv.map(i => i[0]); const values = sortedProv.map(i => i[1]);
-    chartProvInstance = new Chart(ctx, {
-        type: 'bar', data: { labels: labels, datasets: [{ label: 'Total', data: values, backgroundColor: '#007bff', borderRadius: 4 }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, onClick: (e, active) => { if (active.length > 0) { filterProvinsiAktif = labels[active[0].index]; tarikDataDasbor(); } } }
-    });
+    chartProvInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Total', data: values, backgroundColor: '#007bff', borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, onClick: (e, active) => { if (active.length > 0) { filterProvinsiAktif = labels[active[0].index]; tarikDataDasbor(); } } }, plugins: { legend: { display: false } } });
 }
 function gambarChartUmur(uData) {
     const ctx = document.getElementById('chartUmur').getContext('2d'); if (chartUmurInstance) chartUmurInstance.destroy();
@@ -138,12 +133,23 @@ function gambarChartGolongan(goData) {
 window.resetFilter = function() { filterProvinsiAktif = null; tarikDataDasbor(); };
 
 // ==========================================================================
-// 4. SISTEM OTENTIKASI SECURE (ANTI-SCRAPING)
+// 4. SISTEM OTENTIKASI SECURE (PENGHAPUSAN DROPDOWN ROLE)
 // ==========================================================================
-window.penyesuaianPlaceholderLogin = function() {
-    const role = document.getElementById('login-role').value;
-    const inputUser = document.getElementById('inputUser');
-    inputUser.placeholder = (role === 'pkb') ? "Masukkan 18 Digit NIP" : "Masukkan Nama Pengguna (Username)";
+
+// Fungsi baru untuk melihat/menyembunyikan password
+window.togglePasswordVisibility = function() {
+    const passInput = document.getElementById('inputPass');
+    const iconPath = document.getElementById('eye-icon-path');
+    
+    if (passInput.type === 'password') {
+        passInput.type = 'text';
+        // Ubah jadi ikon mata dicoret (eye-slash)
+        iconPath.setAttribute('d', 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21');
+    } else {
+        passInput.type = 'password';
+        // Ubah kembali ke ikon mata normal
+        iconPath.setAttribute('d', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z');
+    }
 };
 
 window.navigasiLoginAtauKeluar = function() {
@@ -158,6 +164,8 @@ window.navigasiLoginAtauKeluar = function() {
     } else {
         document.getElementById('view-dasbor-publik').style.display = 'none';
         document.getElementById('view-login').style.display = 'block';
+        // Menyembunyikan tombol header saat berada di halaman login
+        btn.style.display = 'none'; 
     }
 };
 
@@ -165,39 +173,46 @@ window.kembaliKeDasborPublik = function() {
     document.getElementById('view-login').style.display = 'none';
     document.getElementById('view-dasbor-publik').style.display = 'block';
     document.getElementById('pesan-error').style.display = 'none';
+    // Menampilkan kembali tombol header saat kembali ke dasbor
+    document.getElementById('btn-auth-action').style.display = 'block'; 
 };
 
 window.eksekusiLogin = async function() {
-    const role = document.getElementById('login-role').value;
-    const user = document.getElementById('inputUser').value;
+    // Karena dropdown dihapus, kita ambil murni dari input yang diketik pengguna
+    const user = document.getElementById('inputUser').value.trim();
     const pass = document.getElementById('inputPass').value;
     const err = document.getElementById('pesan-error');
     err.style.display = 'none';
 
     if (!user || !pass) return;
 
-    if (role === 'superadmin') {
-        if (user === 'superadmin' && pass === 'admin') masukHalamanRole('superadmin', 'Super Admin Pusat');
-        else memunculkanErrorLogin();
+    // 1. Cek Apakah Dia Super Admin
+    if (user === 'superadmin' && pass === 'admin') {
+        masukHalamanRole('superadmin', 'Super Admin Pusat');
+        return;
     } 
-    else if (role === 'admin') {
-        if (user === 'admin' && pass === 'admin') masukHalamanRole('admin', 'Admin Regional');
-        else memunculkanErrorLogin();
+    
+    // 2. Cek Apakah Dia Admin Regional
+    if (user === 'admin' && pass === 'admin') {
+        masukHalamanRole('admin', 'Admin Regional');
+        return;
     } 
-    else if (role === 'pkb') {
-        try {
-            // LOGIN AMAN: Menggunakan RPC. Hacker tidak bisa lagi menyedot tabel utama!
-            const { data, error } = await mySupabase.rpc('otentikasi_pegawai', { p_nip: user });
-            if (error || !data) { memunculkanErrorLogin("NIP Tidak Ditemukan!"); }
-            else {
-                document.getElementById('pkb-nama').innerText = data.nama_lengkap;
-                document.getElementById('pkb-nip').innerText = data.nip;
-                document.getElementById('pkb-jabatan').innerText = data.jabatan + " (" + (data.golongan || '-') + ")";
-                document.getElementById('pkb-wilayah').innerText = (data.kabupaten || '') + ", " + data.provinsi;
-                masukHalamanRole('pkb', data.nama_lengkap);
-            }
-        } catch (e) { memunculkanErrorLogin(); }
-    }
+    
+    // 3. Jika bukan keduanya, asumsikan ini adalah PKB/PLKB yang sedang login
+    try {
+        const { data, error } = await mySupabase.rpc('otentikasi_pegawai', { p_nip: user });
+        if (error || !data) { 
+            memunculkanErrorLogin("Username/NIP Tidak Ditemukan atau Password Salah!"); 
+        } else {
+            // Catatan: Saat ini validasi password untuk PKB belum disetel di tabel database Anda.
+            // Sistem masih menganggap login sukses jika NIP valid di Supabase. 
+            document.getElementById('pkb-nama').innerText = data.nama_lengkap;
+            document.getElementById('pkb-nip').innerText = data.nip;
+            document.getElementById('pkb-jabatan').innerText = data.jabatan + " (" + (data.golongan || '-') + ")";
+            document.getElementById('pkb-wilayah').innerText = (data.kabupaten || '') + ", " + data.provinsi;
+            masukHalamanRole('pkb', data.nama_lengkap);
+        }
+    } catch (e) { memunculkanErrorLogin(); }
 };
 
 function memunculkanErrorLogin(customMsg) {
@@ -209,7 +224,12 @@ function memunculkanErrorLogin(customMsg) {
 function masukHalamanRole(role, namaHeader) {
     document.getElementById('view-login').style.display = 'none';
     document.getElementById('inputUser').value = ''; document.getElementById('inputPass').value = '';
-    document.getElementById('btn-auth-action').innerText = "Keluar Sesi";
+    
+    // Munculkan kembali tombol header dan ubah jadi tombol keluar
+    const btnHeader = document.getElementById('btn-auth-action');
+    btnHeader.style.display = 'block';
+    btnHeader.innerText = "Keluar Sesi";
+    
     document.getElementById('header-title').innerText = `Portal: ${namaHeader}`;
 
     if (role === 'superadmin') document.getElementById('view-superadmin').style.display = 'block';
