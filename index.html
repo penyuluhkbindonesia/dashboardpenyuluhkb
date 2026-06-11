@@ -5,32 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard PenyuluhKB</title>
     <style>
-        :root {
-            --bg-primary: #f0f2f5;
-            --bg-card: #ffffff;
-            --text-main: #333333;
-            --text-muted: #6c757d;
-            --border-color: #dee2e6;
-            --base-font-size: 100%;
-        }
-
-        [data-theme="dark"] {
-            --bg-primary: #1a1a1a;
-            --bg-card: #2d2d2d;
-            --text-main: #ffffff;
-            --text-muted: #b0b0b0;
-            --border-color: #404040;
-        }
-
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: var(--bg-primary); 
-            color: var(--text-main);
-            margin: 0; 
-            padding-bottom: 60px; 
-            font-size: var(--base-font-size);
-            transition: background 0.3s, color 0.3s;
-        }
+        :root { --bg-primary: #f0f2f5; --bg-card: #ffffff; --text-main: #333333; --text-muted: #6c757d; --border-color: #dee2e6; --base-font-size: 100%; }
+        [data-theme="dark"] { --bg-primary: #1a1a1a; --bg-card: #2d2d2d; --text-main: #ffffff; --text-muted: #b0b0b0; --border-color: #404040; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-primary); color: var(--text-main); margin: 0; padding-bottom: 60px; font-size: var(--base-font-size); transition: background 0.3s, color 0.3s; }
         
         .header { background-color: #0056b3; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .header h1 { margin: 0; font-size: 1.2rem; }
@@ -78,7 +55,8 @@
         .sidebar-menu li:hover, .sidebar-menu li.active { background: #0056b3; color: white; }
 
         .dua-kolom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 768px) { .dua-kolom-grid { grid-template-columns: 1fr; } }
+        .empat-kolom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
+        @media (max-width: 900px) { .empat-kolom-grid { grid-template-columns: 1fr 1fr; } .dua-kolom-grid { grid-template-columns: 1fr; } }
         
         /* CSS Khusus Form Update Profil */
         .form-section { border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-bottom: 25px; background: var(--bg-card); }
@@ -127,9 +105,7 @@
 <div class="main-content">
     <div class="container">
         
-        <!-- HALAMAN DASBOR PUBLIK -->
         <div id="view-dasbor-publik">
-            <!-- [Isi Dasbor Publik Tetap Sama, disembunyikan untuk menyingkat agar fokus ke Portal] -->
             <div class="cakupan-status"><h2 id="label-cakupan">Data PKB/PLKB : NASIONAL</h2><button id="btn-reset-filter" class="btn-reset" onclick="resetFilter()">Tampilkan Nasional</button></div>
             <div class="kpi-grid">
                 <div class="card"><h3>TOTAL PKB/PLKB</h3><p class="angka" id="kpi-total">0</p></div>
@@ -140,44 +116,29 @@
                 <div class="card warning"><h3>PENSIUN BLN INI</h3><p class="angka" id="kpi-pensiun-bulan">0</p></div>
                 <div class="card danger"><h3>PENSIUN TH 2026</h3><p class="angka" id="kpi-pensiun-tahun">0</p></div>
             </div>
-            <div class="chart-grid">
-                <div class="panel"><h2>Sebaran Provinsi</h2><div class="scrollable-panel"><div class="canvas-container-tall"><canvas id="chartProvinsi"></canvas></div></div></div>
-                <div class="panel"><h2>Pendidikan Terakhir</h2><div class="canvas-container"><canvas id="chartPendidikan"></canvas></div></div>
-            </div>
-            <div class="chart-grid">
-                <div class="panel"><h2>Kelompok Umur Pegawai</h2><div class="canvas-container"><canvas id="chartUmur"></canvas></div></div>
-                <div class="panel"><h2>Demografi Generasi</h2><div class="canvas-container"><canvas id="chartGenerasi"></canvas></div></div>
-            </div>
-            <div class="chart-grid">
-                <div class="panel"><h2>Golongan Pegawai</h2><div class="canvas-container"><canvas id="chartGolongan"></canvas></div></div>
-                <div class="panel"><h2>Proporsi Jabatan</h2><div class="canvas-container"><canvas id="chartJabatan"></canvas></div></div>
-            </div>
+            <div class="chart-grid"><div class="panel"><h2>Sebaran Provinsi</h2><div class="scrollable-panel"><div class="canvas-container-tall"><canvas id="chartProvinsi"></canvas></div></div></div><div class="panel"><h2>Pendidikan Terakhir</h2><div class="canvas-container"><canvas id="chartPendidikan"></canvas></div></div></div>
+            <div class="chart-grid"><div class="panel"><h2>Kelompok Umur Pegawai</h2><div class="canvas-container"><canvas id="chartUmur"></canvas></div></div><div class="panel"><h2>Demografi Generasi</h2><div class="canvas-container"><canvas id="chartGenerasi"></canvas></div></div></div>
+            <div class="chart-grid"><div class="panel"><h2>Golongan Pegawai</h2><div class="canvas-container"><canvas id="chartGolongan"></canvas></div></div><div class="panel"><h2>Proporsi Jabatan</h2><div class="canvas-container"><canvas id="chartJabatan"></canvas></div></div></div>
             <div class="panel"><h2>Daftar Pensiun Terdekat (2026)</h2><div class="table-responsive"><table id="tabelPensiun"><thead><tr><th>Nama Lengkap</th><th>Provinsi</th><th>Jabatan</th><th>Tanggal Pensiun</th></tr></thead><tbody></tbody></table></div></div>
         </div>
 
-        <!-- HALAMAN PORTAL LOGIN -->
         <div id="view-login" class="login-box">
             <h2>Login Portal</h2>
             <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Gunakan User dan Password untuk Masuk.</p>
             <input type="text" id="inputUser" placeholder="Masukkan user anda" required>
             <div class="password-wrapper">
                 <input type="password" id="inputPass" placeholder="Masukkan Password" required>
-                <svg class="toggle-icon" id="togglePasswordIcon" onclick="togglePasswordVisibility()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path id="eye-icon-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
+                <svg class="toggle-icon" id="togglePasswordIcon" onclick="togglePasswordVisibility()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path id="eye-icon-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             </div>
             <button class="btn-primary" onclick="eksekusiLogin()">Otorisasi Masuk</button>
             <button class="btn-batal" onclick="kembaliKeDasborPublik()">Batal, Kembali ke Dashboard</button>
             <p id="pesan-error" style="color: red; display: none; text-align: center; font-size: 0.9rem; margin-top: 15px;"></p>
         </div>
 
-        <!-- HALAMAN SUPER ADMIN & ADMIN -->
         <div id="view-superadmin" style="display: none;"><div class="panel" style="border-top: 4px solid #6f42c1;"><h2>Dashboard Super Admin</h2></div></div>
         <div id="view-admin" style="display: none;"><div class="panel" style="border-top: 4px solid #fd7e14;"><h2>Dashboard Admin Regional</h2></div></div>
 
-        <!-- HALAMAN PORTAL UTAMA PENYULUHKB (MEMBER) -->
         <div id="view-portal-pkb" class="portal-layout">
-            
             <div class="sidebar">
                 <ul class="sidebar-menu">
                     <li class="tab-link active" onclick="pindahTabPortal('beranda')">Beranda</li>
@@ -190,16 +151,11 @@
             </div>
 
             <div class="portal-viewport">
-                
-                <!-- Tab: Beranda -->
                 <div id="tab-beranda" class="panel tab-content">
                     <h2 id="teks-sapaan" style="color: #0056b3; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-sambutan" style="margin-top: 0; color: var(--text-main);">Selamat Datang di Portal PenyuluhKB Indonesia</h3>
-                    <p style="line-height: 1.6; color: var(--text-muted); margin-top: 15px;">
-                        Ini adalah aplikasi mandiri yang dibangun PenyuluhKB Indonesia sebagai pusat informasi, materi pembinaan, regulasi kepegawaian, dan pengelolaan profil secara terintegrasi. Jelajahi berbagai menu di panel sebelah kiri untuk mendukung dan mempermudah pelaporan administrasi serta capaian program Bangga Kencana di lini lapangan.
-                    </p>
+                    <p style="line-height: 1.6; color: var(--text-muted); margin-top: 15px;">Ini adalah aplikasi mandiri yang dibangun PenyuluhKB Indonesia sebagai pusat informasi, materi pembinaan, regulasi kepegawaian, dan pengelolaan profil secara terintegrasi. Jelajahi berbagai menu di panel sebelah kiri untuk mendukung dan mempermudah pelaporan administrasi serta capaian program Bangga Kencana di lini lapangan.</p>
 
-                    <!-- Alert Update Profil (Telah Direvisi) -->
                     <div style="background-color: #e8f4fd; border-left: 4px solid #007bff; padding: 15px; margin-top: 20px; border-radius: 4px;">
                         <h4 style="margin: 0 0 5px 0; color: #0056b3;">Penting: Pemutakhiran Data Mandiri</h4>
                         <p style="margin: 0; color: var(--text-main); font-size: 0.95rem;">Agar Anda dapat memaksimalkan seluruh fitur fungsional aplikasi ini, silahkan menuju menu <strong>Profil Saya</strong> dan klik <strong>Update Profil</strong> untuk melengkapi data terkini Anda.</p>
@@ -207,23 +163,18 @@
 
                     <div style="border: 1px solid var(--border-color); padding: 20px; margin-top: 25px; border-radius: 8px; background-color: var(--bg-card);">
                         <h3 style="margin-top: 0; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Kotak Saran & Inovasi</h3>
-                        <p style="font-size: 0.9rem; color: var(--text-muted);">Punya ide brilian atau menemukan kendala di aplikasi? Sampaikan langsung kepada tim pengembang pusat!</p>
-                        
                         <label class="form-label">Kategori Masukan:</label>
                         <select id="kategori-saran">
                             <option value="Inovasi Fitur">💡 Usulan Inovasi Fitur Baru</option>
                             <option value="Laporan Kendala">🐛 Laporan Kendala (Bug)</option>
                             <option value="Lainnya">💬 Masukan Lainnya</option>
                         </select>
-
                         <label class="form-label">Detail Pesan:</label>
                         <textarea id="isi-saran" rows="4" placeholder="Ketik saran inovasi atau kendala teknis Anda di sini..."></textarea>
-
                         <button id="btn-kirim-saran" class="btn-primary" style="width: auto; padding: 10px 25px; margin-top: 0; background-color: #17a2b8;" onclick="kirimSaranPengguna()">Kirim Masukan</button>
                     </div>
                 </div>
 
-                <!-- Tab: Profil -->
                 <div id="tab-profil" class="panel tab-content" style="display: none;">
                     
                     <div id="view-profil-utama">
@@ -239,12 +190,10 @@
                         <button class="btn-primary" style="background-color: #007bff; margin-top: 20px;" onclick="bukaFormEditProfil()">Update Profil</button>
                     </div>
 
-                    <!-- FORMULIR UPDATE PROFIL 4 BLOK -->
                     <div id="form-edit-profil" style="display: none;">
                         <h2 style="color: #0056b3; border-bottom: 2px solid #0056b3;">Formulir Update Profil</h2>
                         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px;">Silakan lengkapi formulir di bawah ini dengan data terkini Anda.</p>
                         
-                        <!-- BLOK 1: Data Dasar -->
                         <div class="form-section">
                             <h3>1. Data Dasar</h3>
                             <div class="dua-kolom-grid">
@@ -256,9 +205,9 @@
                             <div class="dua-kolom-grid" style="margin-top: 15px;">
                                 <div>
                                     <label class="form-label">Tempat Lahir (Provinsi):</label>
-                                    <select><option>-- Pilih Provinsi --</option><option>JAWA BARAT</option><option>KALIMANTAN TIMUR</option></select>
+                                    <select id="tl-provinsi" onchange="populateTLKabupaten()"><option value="">-- Pilih Provinsi --</option></select>
                                     <label class="form-label">Tempat Lahir (Kab/Kota):</label>
-                                    <select><option>-- Pilih Kab/Kota --</option></select>
+                                    <select id="tl-kabupaten"><option value="">-- Pilih Kab/Kota --</option></select>
                                 </div>
                                 <div>
                                     <label class="form-label">Tanggal Lahir:</label><input type="date">
@@ -267,10 +216,37 @@
                                 </div>
                             </div>
                             <div class="dua-kolom-grid">
-                                <div><label class="form-label">Jabatan Fungsional:</label><select><option>Penyuluh KB Terampil</option><option>Penyuluh KB Mahir</option><option>Penyuluh KB Ahli Pertama</option><option>Penyuluh KB Ahli Muda</option><option>Penyuluh KB Ahli Madya</option></select></div>
-                                <div><label class="form-label">Golongan Ruang:</label><select><option>II/c</option><option>II/d</option><option>III/a</option><option>III/b</option><option>III/c</option><option>III/d</option><option>IV/a</option><option>IV/b</option></select></div>
-                                <div><label class="form-label">Jenis ASN:</label><select><option>PNS</option><option>PPPK</option></select></div>
-                                <div><label class="form-label">Tahun Pertama Diangkat PKB/PLKB:</label><select><option>2024</option><option>2023</option><option>2022</option><option>2021</option><option>Sebelum 2021</option></select></div>
+                                <div>
+                                    <label class="form-label">Jenis ASN:</label>
+                                    <select id="form-jenis-asn" onchange="updateGolonganRuang()">
+                                        <option value="">-- Pilih Jenis ASN --</option>
+                                        <option value="PNS">PNS</option>
+                                        <option value="PPPK">PPPK</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Tahun Pertama Diangkat Sebagai PKB/PLKB:</label>
+                                    <select id="form-tahun-diangkat"><option value="">-- Pilih Tahun --</option></select>
+                                </div>
+                            </div>
+                            <div class="dua-kolom-grid">
+                                <div>
+                                    <label class="form-label">Jabatan Fungsional:</label>
+                                    <select>
+                                        <option value="">-- Pilih Jabatan --</option>
+                                        <option>PLKB Pemula</option>
+                                        <option>PLKB Mahir</option>
+                                        <option>PLKB Penyelia</option>
+                                        <option>PKB Ahli Pertama</option>
+                                        <option>PKB Ahli Muda</option>
+                                        <option>PKB Ahli Madya</option>
+                                        <option>PKB Ahli Utama</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Golongan Ruang:</label>
+                                    <select id="form-golongan"><option value="">-- Pilih Golongan --</option></select>
+                                </div>
                             </div>
                             <div class="dua-kolom-grid">
                                 <div><label class="form-label">Pendidikan Terakhir:</label><select><option>SMA/Sederajat</option><option>D-III</option><option>D-IV</option><option>S1</option><option>S2</option></select></div>
@@ -278,48 +254,56 @@
                             </div>
                         </div>
 
-                        <!-- BLOK 2: Data Keluarga -->
                         <div class="form-section">
                             <h3>2. Data Keluarga</h3>
-                            <div class="dua-kolom-grid">
-                                <div><label class="form-label">Status Perkawinan:</label><select><option>Belum Kawin</option><option>Kawin</option><option>Janda</option><option>Duda</option></select></div>
-                                <div><label class="form-label">Jumlah Anak:</label>
-                                    <select>
-                                        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+                            <div class="empat-kolom-grid">
+                                <div>
+                                    <label class="form-label">Status Perkawinan:</label>
+                                    <select id="form-status-kawin" onchange="updateDataKeluarga()">
+                                        <option value="Belum Kawin">Belum Kawin</option>
+                                        <option value="Kawin">Kawin</option>
+                                        <option value="Janda">Janda</option>
+                                        <option value="Duda">Duda</option>
                                     </select>
                                 </div>
-                                <div><label class="form-label">Kesertaan Ber-KB:</label><select><option>Sedang Menggunakan KB</option><option>Tidak Menggunakan KB</option></select></div>
-                                <div><label class="form-label">Tinggal Bersama Keluarga Saat Ini?</label><select><option>Ya (Suami/Istri/Anak)</option><option>Tidak (Sendiri/Kost)</option></select></div>
+                                <div id="wrap-jumlah-anak" style="display: none;">
+                                    <label class="form-label">Jumlah Anak:</label>
+                                    <select id="form-jumlah-anak"></select> </div>
+                                <div id="wrap-kesertaan-kb" style="display: none;">
+                                    <label class="form-label">Kesertaan Ber-KB:</label>
+                                    <select><option>Sedang Menggunakan KB</option><option>Tidak Menggunakan KB</option></select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Tinggal Bersama Keluarga (Suami/Istri/Anak)?</label>
+                                    <select><option>Ya</option><option>Tidak</option></select>
+                                </div>
                             </div>
-                            <label class="form-label" style="margin-top:15px;">Alamat Tempat Tinggal Saat Ini:</label>
-                            <div class="dua-kolom-grid">
-                                <div><select><option>-- Pilih Provinsi --</option></select></div>
-                                <div><select><option>-- Pilih Kab/Kota --</option></select></div>
-                                <div><select><option>-- Pilih Kecamatan --</option></select></div>
+                            
+                            <label class="form-label" style="margin-top:15px; border-top: 1px dashed #eee; padding-top:15px;">Alamat Tempat Tinggal Saat Ini:</label>
+                            <div class="empat-kolom-grid">
+                                <div><label class="form-label">Provinsi</label><select id="dom-prov" onchange="popDomKab()"><option value="">-- Provinsi --</option></select></div>
+                                <div><label class="form-label">Kabupaten/Kota</label><select id="dom-kab" onchange="popDomKec()"><option value="">-- Kab/Kota --</option></select></div>
+                                <div><label class="form-label">Kecamatan</label><select id="dom-kec" onchange="popDomDesa()"><option value="">-- Kecamatan --</option></select></div>
+                                <div><label class="form-label">Desa/Kelurahan</label><select id="dom-desa"><option value="">-- Desa/Kel --</option></select></div>
                             </div>
                         </div>
 
-                        <!-- BLOK 3: Wilayah Kerja -->
                         <div class="form-section">
-                            <h3>3. Wilayah Kerja Pembinaan</h3>
+                            <h3>3. Wilayah Kerja Binaan</h3>
                             <div class="dua-kolom-grid">
-                                <div><label class="form-label">Provinsi Binaan:</label><select><option>KALIMANTAN TIMUR</option></select></div>
-                                <div><label class="form-label">Kabupaten/Kota Binaan:</label><select><option>KUTAI BARAT</option></select></div>
-                                <div><label class="form-label">Kecamatan Binaan:</label><select><option>-- Pilih Kecamatan --</option></select></div>
+                                <div><label class="form-label">Provinsi Binaan:</label><select id="bin-prov" onchange="popBinKab()"><option value="">-- Pilih Provinsi --</option></select></div>
+                                <div><label class="form-label">Kabupaten/Kota Binaan:</label><select id="bin-kab" onchange="popBinKec()"><option value="">-- Pilih Kab/Kota --</option></select></div>
+                                <div><label class="form-label">Kecamatan Binaan:</label><select id="bin-kec" onchange="popBinDesa()"><option value="">-- Pilih Kecamatan --</option></select></div>
                             </div>
                             <label class="form-label" style="margin-top:15px;">Desa / Kelurahan Binaan (Bisa pilih lebih dari satu):</label>
-                            <div class="checkbox-group" style="padding:10px; border:1px solid var(--border-color); border-radius:4px;">
-                                <label><input type="checkbox"> Desa A</label>
-                                <label><input type="checkbox"> Desa B</label>
-                                <label><input type="checkbox"> Desa C</label>
+                            <div class="checkbox-group" id="wrap-bin-desa" style="padding:10px; border:1px solid var(--border-color); border-radius:4px; min-height: 40px; background: #fafafa;">
+                                <span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Silakan pilih kecamatan terlebih dahulu.</span>
                             </div>
                         </div>
 
-                        <!-- BLOK 4: Dukungan Sarana Prasarana -->
                         <div class="form-section">
                             <h3>4. Dukungan Sarana & Prasarana</h3>
                             
-                            <!-- 4.1 Balai KB -->
                             <label class="form-label">1. Memiliki Balai Penyuluhan KB?</label>
                             <select id="sarpras-balai">
                                 <option value="Tidak">Tidak</option>
@@ -328,52 +312,44 @@
                             <div id="sub-balai" class="hidden-field">
                                 <label class="form-label">Nama Balai Penyuluhan KB:</label>
                                 <input type="text" placeholder="Masukkan nama balai">
+                                <label class="form-label">Titik Lokasi Balai Penyuluhan KB (Google Maps Link / Koordinat):</label>
+                                <input type="text" placeholder="Contoh: https://maps.app.goo.gl/... atau -6.200000, 106.816666">
                             </div>
 
-                            <!-- 4.2 Kendaraan Dinas -->
                             <label class="form-label" style="margin-top:15px;">2. Menggunakan Kendaraan Dinas?</label>
                             <select id="sarpras-kendaraan">
                                 <option value="Tidak">Tidak</option>
                                 <option value="Ya">Ya</option>
                             </select>
+                            
                             <div id="sub-kendaraan" class="hidden-field">
                                 <div class="dua-kolom-grid">
-                                    <div><label class="form-label">Tahun Kendaraan:</label><select><option>2023</option><option>2022</option><option>2021</option><option>Lebih Lama</option></select></div>
+                                    <div>
+                                        <label class="form-label">Tahun Kendaraan:</label>
+                                        <select id="form-tahun-kendaraan"><option value="">-- Pilih Tahun --</option></select>
+                                    </div>
                                     <div><label class="form-label">Jenis Transmisi:</label><select><option>Manual</option><option>Matic</option></select></div>
                                     <div><label class="form-label">Kondisi Kendaraan Saat Ini:</label><select><option>Baik</option><option>Rusak Ringan</option><option>Rusak Berat</option></select></div>
                                 </div>
-                            </div>
 
-                            <!-- 4.3 Biaya BBM -->
-                            <label class="form-label" style="margin-top:15px;">3. Mendapat Biaya BBM?</label>
-                            <select id="sarpras-bbm">
-                                <option value="Tidak">Tidak</option>
-                                <option value="Ya">Ya</option>
-                            </select>
-                            <div id="sub-bbm" class="hidden-field">
-                                <label class="form-label">Sumber Dana BBM (Bisa pilih lebih dari satu):</label>
-                                <div class="checkbox-group">
-                                    <label><input type="checkbox"> APBD</label>
-                                    <label><input type="checkbox"> APBN</label>
+                                <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                                    <label class="form-label">Mendapat Biaya BBM?</label>
+                                    <select id="sarpras-bbm"><option value="Tidak">Tidak</option><option value="Ya">Ya</option></select>
+                                    <div id="sub-bbm" class="hidden-field" style="margin-bottom: 0;">
+                                        <label class="form-label">Sumber Dana BBM (Bisa pilih lebih dari satu):</label>
+                                        <div class="checkbox-group"><label><input type="checkbox"> APBD</label><label><input type="checkbox"> APBN</label></div>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <!-- 4.4 Biaya Perawatan -->
-                            <label class="form-label" style="margin-top:15px;">4. Mendapat Biaya Perawatan Kendaraan (Service/Oli/Sparepart)?</label>
-                            <select id="sarpras-perawatan">
-                                <option value="Tidak">Tidak</option>
-                                <option value="Ya">Ya</option>
-                            </select>
-                            <div id="sub-perawatan" class="hidden-field">
-                                <label class="form-label">Sumber Dana Perawatan (Bisa pilih lebih dari satu):</label>
-                                <div class="checkbox-group">
-                                    <label><input type="checkbox"> APBD</label>
-                                    <label><input type="checkbox"> APBN</label>
+                                <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                                    <label class="form-label">Mendapat Biaya Perawatan Kendaraan (Service/Oli/Sparepart)?</label>
+                                    <select id="sarpras-perawatan"><option value="Tidak">Tidak</option><option value="Ya">Ya</option></select>
+                                    <div id="sub-perawatan" class="hidden-field" style="margin-bottom: 0;">
+                                        <label class="form-label">Sumber Dana Perawatan (Bisa pilih lebih dari satu):</label>
+                                        <div class="checkbox-group"><label><input type="checkbox"> APBD</label><label><input type="checkbox"> APBN</label></div>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <!-- 4.5 Sarpras Lainnya -->
-                            <label class="form-label" style="margin-top:15px;">5. Memiliki Sarana Prasarana Lainnya:</label>
+                            </div> <label class="form-label" style="margin-top:15px;">3. Memiliki Sarana Prasarana Lainnya:</label>
                             <div class="checkbox-group">
                                 <label><input type="checkbox"> Laptop</label>
                                 <label><input type="checkbox"> HP</label>
@@ -388,7 +364,6 @@
                             </div>
                         </div>
 
-                        <!-- Tombol Aksi -->
                         <div style="display: flex; gap: 10px; margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
                             <button class="btn-primary" style="background-color: #28a745; margin-top: 0; padding: 12px;" onclick="simpanProfilKeServer()">Simpan Perubahan</button>
                             <button class="btn-primary" style="background-color: #dc3545; margin-top: 0; padding: 12px;" onclick="batalEditProfil()">Batal</button>
@@ -396,16 +371,12 @@
                     </div>
                 </div>
 
-                <!-- Tab: Informasi, Materi, Peraturan, Pengaturan (Isinya Tetap) -->
                 <div id="tab-informasi" class="panel tab-content" style="display: none;"><h2>Pusat Informasi Instansi</h2><p>Pengumuman Pelaksanaan Pemutakhiran Data...</p></div>
                 <div id="tab-materi" class="panel tab-content" style="display: none;"><h2>E-Learning & Materi Penyuluhan</h2></div>
                 <div id="tab-peraturan" class="panel tab-content" style="display: none;"><h2>Regulasi & Peraturan Kepegawaian</h2></div>
-                <div id="tab-pengaturan" class="panel tab-content" style="display: none;"><h2>Pengaturan Aplikasi & Aksesibilitas</h2>
-                    <label>Tema Warna Aplikasi:</label><select onchange="ubahTemaAplikasi(this.value)"><option value="light">Terang</option><option value="dark">Gelap</option></select>
-                </div>
+                <div id="tab-pengaturan" class="panel tab-content" style="display: none;"><h2>Pengaturan Aplikasi & Aksesibilitas</h2><select onchange="ubahTemaAplikasi(this.value)"><option value="light">Terang</option><option value="dark">Gelap</option></select></div>
             </div>
         </div>
-
     </div>
 </div>
 
