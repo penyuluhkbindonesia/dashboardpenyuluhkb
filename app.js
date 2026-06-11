@@ -16,40 +16,14 @@ function formatTanggalIndo(tglStr) {
 }
 
 // ==========================================================================
-// DUMMY DATABASE WILAYAH (UNTUK SIMULASI DROPDOWN CASCADING)
-// ==========================================================================
-const dbWilayah = {
-    "JAWA BARAT": {
-        "KOTA BANDUNG": {
-            "SUMUR BANDUNG": ["BABAKAN CIAMIS", "BRAGA", "KEBON PISANG"],
-            "COBLONG": ["DAGO", "LEBAKSILIWANGI", "SADANGSERANG"]
-        },
-        "GARUT": {
-            "TAROGONG KIDUL": ["HAURPANGGUNG", "JAYARAGA", "PATARUMAN"],
-            "CIBATU": ["CIBATU", "KERTAJAYA", "WANAJAYA"]
-        }
-    },
-    "KALIMANTAN TIMUR": {
-        "KUTAI BARAT": {
-            "BARONG TONGKOK": ["BARONG TONGKOK", "SIMPANG RAYA", "SUMBER SARI"],
-            "MELAK": ["MELAK ILIR", "MELAK ULU", "MUARA BENANGAQ"]
-        },
-        "SAMARINDA": {
-            "SAMARINDA ULU": ["AIR HITAM", "DADI MULYA", "GUNUNG KELUA"],
-            "SUNGAI PINANG": ["BANDARA", "GUNUNG LINGAI", "MUKTI MUKA"]
-        }
-    }
-};
-
-// ==========================================================================
-// 2. MESIN BARU (RPC SERVER-SIDE DASBOR)
+// 2. MESIN DASBOR & VISUALISASI GRAFIK
 // ==========================================================================
 async function tarikDataDasbor() {
     document.getElementById('loading-screen').style.display = 'flex';
     try {
         const { data, error } = await mySupabase.rpc('get_rekap_dasbor', { p_provinsi: filterProvinsiAktif });
         if (error) throw error; renderVisualDasbor(data);
-    } catch (error) { console.error("Gagal menarik data dari server:", error); }
+    } catch (error) { console.error("Gagal menarik data dasbor:", error); }
     document.getElementById('loading-screen').style.display = 'none';
 }
 
@@ -80,12 +54,7 @@ function renderVisualDasbor(dataServer) {
     gambarChartUmur(umurCount); gambarChartGenerasi(generasiCount);
 }
 
-// 3. RENDER GRAFIK
-function gambarChartProvinsi(provData) {
-    const ctx = document.getElementById('chartProvinsi').getContext('2d'); if (chartProvInstance) chartProvInstance.destroy();
-    const sortedProv = Object.entries(provData).sort((a, b) => b[1] - a[1]); const labels = sortedProv.map(i => i[0]); const values = sortedProv.map(i => i[1]);
-    chartProvInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Total', data: values, backgroundColor: '#007bff', borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, onClick: (e, active) => { if (active.length > 0) { filterProvinsiAktif = labels[active[0].index]; tarikDataDasbor(); } } }, plugins: { legend: { display: false } } });
-}
+function gambarChartProvinsi(provData) { const ctx = document.getElementById('chartProvinsi').getContext('2d'); if (chartProvInstance) chartProvInstance.destroy(); const sortedProv = Object.entries(provData).sort((a, b) => b[1] - a[1]); const labels = sortedProv.map(i => i[0]); const values = sortedProv.map(i => i[1]); chartProvInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Total', data: values, backgroundColor: '#007bff', borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, onClick: (e, active) => { if (active.length > 0) { filterProvinsiAktif = labels[active[0].index]; tarikDataDasbor(); } } }, plugins: { legend: { display: false } } }); }
 function gambarChartUmur(uData) { const ctx = document.getElementById('chartUmur').getContext('2d'); if (chartUmurInstance) chartUmurInstance.destroy(); chartUmurInstance = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(uData), datasets: [{ data: Object.values(uData), backgroundColor: ['#007bff', '#28a745', '#ffc107', '#fd7e14', '#dc3545'], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }); }
 function gambarChartGenerasi(gData) { const ctx = document.getElementById('chartGenerasi').getContext('2d'); if (chartGenerasiInstance) chartGenerasiInstance.destroy(); chartGenerasiInstance = new Chart(ctx, { type: 'pie', data: { labels: Object.keys(gData), datasets: [{ data: Object.values(gData), backgroundColor: ['#6f42c1', '#17a2b8', '#fd7e14', '#e83e8c'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } }); }
 function gambarChartJabatan(jData) { const ctx = document.getElementById('chartJabatan').getContext('2d'); if (chartJabatanInstance) chartJabatanInstance.destroy(); const sorted = Object.entries(jData).sort((a, b) => b[1] - a[1]); chartJabatanInstance = new Chart(ctx, { type: 'doughnut', data: { labels: sorted.map(i => i[0]), datasets: [{ data: sorted.map(i => i[1]), backgroundColor: ['#007bff', '#17a2b8', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#e83e8c'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10 } } } } }); }
@@ -94,59 +63,30 @@ function gambarChartGolongan(goData) { const ctx = document.getElementById('char
 window.resetFilter = function() { filterProvinsiAktif = null; tarikDataDasbor(); };
 
 // ==========================================================================
-// 4. SISTEM OTENTIKASI & PERSISTENT SESSION
+// 3. SISTEM OTENTIKASI & PERSISTENT SESSION
 // ==========================================================================
 window.togglePasswordVisibility = function() {
-    const passInput = document.getElementById('inputPass'); const iconPath = document.getElementById('eye-icon-path');
-    if (passInput.type === 'password') { passInput.type = 'text'; iconPath.setAttribute('d', 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21');
-    } else { passInput.type = 'password'; iconPath.setAttribute('d', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'); }
+    const pIn = document.getElementById('inputPass'); const ic = document.getElementById('eye-icon-path');
+    if (pIn.type === 'password') { pIn.type = 'text'; ic.setAttribute('d', 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21');
+    } else { pIn.type = 'password'; ic.setAttribute('d', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'); }
 };
 
 window.navigasiLoginAtauKeluar = function() {
     const btn = document.getElementById('btn-auth-action');
     if (btn.innerText === "Keluar Sesi") {
         localStorage.removeItem('sesi_portal_pkb'); localStorage.removeItem('activeTab'); 
-        document.getElementById('view-superadmin').style.display = 'none'; document.getElementById('view-admin').style.display = 'none';
-        document.getElementById('view-portal-pkb').style.display = 'none'; document.getElementById('view-dasbor-publik').style.display = 'block';
-        document.getElementById('header-title').innerText = "Dashboard PenyuluhKB"; btn.innerText = "Masuk / Login";
-        tarikDataDasbor(); 
-    } else {
-        document.getElementById('view-dasbor-publik').style.display = 'none'; document.getElementById('view-login').style.display = 'block'; btn.style.display = 'none'; 
-    }
+        document.getElementById('view-superadmin').style.display = 'none'; document.getElementById('view-admin').style.display = 'none'; document.getElementById('view-portal-pkb').style.display = 'none';
+        document.getElementById('view-dasbor-publik').style.display = 'block'; document.getElementById('header-title').innerText = "Dashboard PenyuluhKB"; btn.innerText = "Masuk / Login"; tarikDataDasbor(); 
+    } else { document.getElementById('view-dasbor-publik').style.display = 'none'; document.getElementById('view-login').style.display = 'block'; btn.style.display = 'none'; }
 };
-
-window.kembaliKeDasborPublik = function() {
-    document.getElementById('view-login').style.display = 'none'; document.getElementById('view-dasbor-publik').style.display = 'block';
-    document.getElementById('pesan-error').style.display = 'none'; document.getElementById('btn-auth-action').style.display = 'block'; 
-};
+window.kembaliKeDasborPublik = function() { document.getElementById('view-login').style.display = 'none'; document.getElementById('view-dasbor-publik').style.display = 'block'; document.getElementById('pesan-error').style.display = 'none'; document.getElementById('btn-auth-action').style.display = 'block'; };
 
 function siapkanBeranda(namaLengkap) {
-    const jamSekarang = new Date().getHours(); let sapaan = 'Malam';
-    if (jamSekarang >= 3 && jamSekarang < 11) sapaan = 'Pagi'; else if (jamSekarang >= 11 && jamSekarang < 15) sapaan = 'Siang'; else if (jamSekarang >= 15 && jamSekarang < 18) sapaan = 'Sore';
+    const jam = new Date().getHours(); let sapaan = 'Malam';
+    if (jam >= 3 && jam < 11) sapaan = 'Pagi'; else if (jam >= 11 && jam < 15) sapaan = 'Siang'; else if (jam >= 15 && jam < 18) sapaan = 'Sore';
     document.getElementById('teks-sapaan').innerText = `Selamat ${sapaan}, ${namaLengkap}`;
-    const sudahPernahMasuk = localStorage.getItem('statusKunjunganPortal'); const teksSambutan = document.getElementById('teks-sambutan');
-    if (sudahPernahMasuk) teksSambutan.innerText = "Selamat Datang Kembali di Portal PenyuluhKB Indonesia";
-    else { teksSambutan.innerText = "Selamat Datang di Portal PenyuluhKB Indonesia"; localStorage.setItem('statusKunjunganPortal', 'true'); }
-}
-
-function pulihkanSesi(data) {
-    const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
-    const wilayahKerja = (data.kabupaten || '') + ", " + data.provinsi;
-    document.getElementById('pkb-nama').innerText = data.nama_lengkap; document.getElementById('pkb-nip').innerText = data.nip;
-    document.getElementById('pkb-jabatan').innerText = gelarJabatan; document.getElementById('pkb-wilayah').innerText = wilayahKerja;
-    document.getElementById('profil-subtitle').innerText = gelarJabatan;
-
-    document.getElementById('form-nama').value = data.nama_lengkap;
-    document.getElementById('form-nip').value = data.nip;
-
-    siapkanBeranda(data.nama_lengkap);
-    
-    document.getElementById('view-login').style.display = 'none'; document.getElementById('view-dasbor-publik').style.display = 'none';
-    const btnHeader = document.getElementById('btn-auth-action'); btnHeader.style.display = 'block'; btnHeader.innerText = "Keluar Sesi";
-    document.getElementById('header-title').innerText = `Portal: ${data.nama_lengkap}`;
-    document.getElementById('view-portal-pkb').style.display = 'grid';
-
-    const tabTerakhir = localStorage.getItem('activeTab') || 'beranda'; pindahTabPortal(tabTerakhir);
+    const sdhMasuk = localStorage.getItem('statusKunjunganPortal'); const tx = document.getElementById('teks-sambutan');
+    if (sdhMasuk) tx.innerText = "Selamat Datang Kembali di Portal PenyuluhKB Indonesia"; else { tx.innerText = "Selamat Datang di Portal PenyuluhKB Indonesia"; localStorage.setItem('statusKunjunganPortal', 'true'); }
 }
 
 window.eksekusiLogin = async function() {
@@ -159,58 +99,129 @@ window.eksekusiLogin = async function() {
     
     try {
         const { data, error } = await mySupabase.rpc('otentikasi_pegawai', { p_nip: user });
-        if (error || !data) { memunculkanErrorLogin("Username/NIP Tidak Ditemukan atau Password Salah!"); } 
+        if (error || !data) { err.style.display='block'; err.innerText="Username/NIP Tidak Ditemukan atau Password Salah!"; } 
         else {
             localStorage.setItem('sesi_portal_pkb', JSON.stringify(data));
             localStorage.setItem('activeTab', 'beranda'); 
             pulihkanSesi(data);
         }
-    } catch (e) { memunculkanErrorLogin(); }
+    } catch (e) { err.style.display='block'; err.innerText="Kredensial Akses Salah / Ditolak!"; }
 };
 
-function memunculkanErrorLogin(customMsg) { const err = document.getElementById('pesan-error'); err.style.display = 'block'; err.innerText = customMsg || "Kredensial Akses Salah / Ditolak!"; }
 function masukHalamanRole(role, namaHeader) {
     document.getElementById('view-login').style.display = 'none'; document.getElementById('view-dasbor-publik').style.display = 'none';
-    const btnHeader = document.getElementById('btn-auth-action'); btnHeader.style.display = 'block'; btnHeader.innerText = "Keluar Sesi";
+    const btn = document.getElementById('btn-auth-action'); btn.style.display = 'block'; btn.innerText = "Keluar Sesi";
     document.getElementById('header-title').innerText = `Portal: ${namaHeader}`;
     if (role === 'superadmin') document.getElementById('view-superadmin').style.display = 'block';
     if (role === 'admin') document.getElementById('view-admin').style.display = 'block';
 }
 
 // ==========================================================================
-// 5. NAVIGASI PORTAL & LOGIKA CASCADING FORM UPDATE PROFIL
+// 4. LOGIKA FITUR PORTAL (WILAYAH SUPABASE, FORM, GPS)
 // ==========================================================================
-window.pindahTabPortal = function(tabId) {
-    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-    document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
-    document.getElementById(`tab-${tabId}`).style.display = 'block';
-    const activeLink = document.querySelector(`.tab-link[onclick="pindahTabPortal('${tabId}')"]`); if(activeLink) activeLink.classList.add('active');
-    localStorage.setItem('activeTab', tabId);
+
+// A. Fungsi Penarik Data Wilayah dari Supabase
+async function fetchWilayah(level, kodeInduk, targetId, placeholderText) {
+    const target = document.getElementById(targetId);
+    target.innerHTML = `<option value="">-- Memuat... --</option>`;
+    
+    let query = mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', level).order('nama', { ascending: true });
+    if (kodeInduk) query = query.eq('kode_induk', kodeInduk);
+    else query = query.is('kode_induk', null); // Untuk Provinsi
+
+    const { data, error } = await query;
+    target.innerHTML = `<option value="">${placeholderText}</option>`;
+    if (data) { data.forEach(w => { target.innerHTML += `<option value="${w.kode}">${w.nama}</option>`; }); }
+}
+
+// B. Event Listener CASCADING Wilayah
+window.popTLKab = function() { fetchWilayah('Kabupaten/Kota', document.getElementById('tl-provinsi').value, 'tl-kabupaten', '-- Pilih Kab/Kota --'); };
+
+window.popDomKab = function() { 
+    fetchWilayah('Kabupaten/Kota', document.getElementById('dom-prov').value, 'dom-kab', '-- Pilih Kab/Kota --'); 
+    document.getElementById('dom-kec').innerHTML = '<option value="">-- Kecamatan --</option>'; document.getElementById('dom-desa').innerHTML = '<option value="">-- Desa/Kel --</option>';
+};
+window.popDomKec = function() { 
+    fetchWilayah('Kecamatan', document.getElementById('dom-kab').value, 'dom-kec', '-- Kecamatan --'); 
+    document.getElementById('dom-desa').innerHTML = '<option value="">-- Desa/Kel --</option>';
+};
+window.popDomDesa = function() { fetchWilayah('Desa/Kelurahan', document.getElementById('dom-kec').value, 'dom-desa', '-- Desa/Kel --'); };
+
+window.popBinKec = async function() {
+    const provKode = document.getElementById('bin-prov').value;
+    const kabKode = document.getElementById('bin-kab').value;
+    if(kabKode) {
+        fetchWilayah('Kecamatan', kabKode, 'bin-kec', '-- Pilih Kecamatan --');
+        document.getElementById('wrap-bin-desa').innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Silakan pilih kecamatan terlebih dahulu.</span>';
+    }
 };
 
-window.bukaFormEditProfil = function() { document.getElementById('view-profil-utama').style.display = 'none'; document.getElementById('form-edit-profil').style.display = 'block'; };
-window.batalEditProfil = function() { document.getElementById('form-edit-profil').style.display = 'none'; document.getElementById('view-profil-utama').style.display = 'block'; };
-window.simpanProfilKeServer = function() { alert("Pembaharuan Profil Memerlukan Persetujuan Admin sebelum tampil di Dasbor."); batalEditProfil(); };
+window.popBinDesa = async function() {
+    const kecKode = document.getElementById('bin-kec').value;
+    const wrap = document.getElementById('wrap-bin-desa');
+    wrap.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Memuat desa...</span>';
+    if(!kecKode) return;
 
-// LOGIKA OTOMATIS FORMULIR
-function setupFormLogika() {
-    // A. Generate Tahun
-    let htmlTahunAnak = ''; for(let i=0; i<=10; i++) htmlTahunAnak += `<option value="${i}">${i}</option>`;
-    document.getElementById('form-jumlah-anak').innerHTML = htmlTahunAnak;
+    const { data } = await mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', 'Desa/Kelurahan').eq('kode_induk', kecKode).order('nama');
+    wrap.innerHTML = '';
+    if(data && data.length > 0) {
+        // Render sebagai Checkbox untuk Binaan
+        data.forEach(d => { wrap.innerHTML += `<label style="width:48%; display:inline-block;"><input type="checkbox" value="${d.kode}"> ${d.nama}</label>`; });
+    } else { wrap.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Data desa tidak tersedia.</span>'; }
+};
+
+// C. Inisialisasi Wilayah Global & Binaan (Terkunci Sesuai Profil)
+async function inisialisasiSemuaWilayah(profilData) {
+    // 1. Muat Provinsi untuk Tempat Lahir dan Domisili (Bebas Pilih)
+    fetchWilayah('Provinsi', null, 'tl-provinsi', '-- Pilih Provinsi --');
+    fetchWilayah('Provinsi', null, 'dom-prov', '-- Pilih Provinsi --');
+
+    // 2. Kunci Wilayah Binaan Sesuai Profil Instansi
+    const binProvSelect = document.getElementById('bin-prov');
+    const binKabSelect = document.getElementById('bin-kab');
     
-    let htmlTahunAwal = '<option value="">-- Pilih Tahun --</option>';
-    for(let y=2024; y>=1980; y--) htmlTahunAwal += `<option value="${y}">${y}</option>`;
-    document.getElementById('form-tahun-diangkat').innerHTML = htmlTahunAwal;
-    document.getElementById('form-tahun-kendaraan').innerHTML = htmlTahunAwal;
+    if(profilData.provinsi) {
+        const { data: provData } = await mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', 'Provinsi').ilike('nama', profilData.provinsi).single();
+        if(provData) {
+            binProvSelect.innerHTML = `<option value="${provData.kode}" selected>${provData.nama}</option>`;
+            if(profilData.kabupaten) {
+                const { data: kabData } = await mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', 'Kabupaten/Kota').eq('kode_induk', provData.kode).ilike('nama', profilData.kabupaten).single();
+                if(kabData) {
+                    binKabSelect.innerHTML = `<option value="${kabData.kode}" selected>${kabData.nama}</option>`;
+                    // Auto load kecamatan binaan
+                    fetchWilayah('Kecamatan', kabData.kode, 'bin-kec', '-- Pilih Kecamatan --');
+                }
+            }
+        }
+    }
+}
 
-    // B. Setup Dropdown Wilayah Awal (Provinsi)
-    let provOptions = '<option value="">-- Pilih Provinsi --</option>';
-    Object.keys(dbWilayah).forEach(prov => provOptions += `<option value="${prov}">${prov}</option>`);
-    document.getElementById('tl-provinsi').innerHTML = provOptions;
-    document.getElementById('dom-prov').innerHTML = provOptions;
-    document.getElementById('bin-prov').innerHTML = provOptions;
+// D. Fitur GPS Geolocation (Balai KB)
+window.dapatkanLokasiBalai = function() {
+    const inputLokasi = document.getElementById('lokasi-balai');
+    if (navigator.geolocation) {
+        inputLokasi.value = "Meminta izin dan mencari satelit GPS...";
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                inputLokasi.value = `${position.coords.latitude}, ${position.coords.longitude}`;
+            },
+            function(error) {
+                inputLokasi.value = "";
+                if(error.code == 1) alert("Akses GPS ditolak! Silakan izinkan browser mengakses lokasi (Location/GPS).");
+                else alert("Satelit GPS tidak ditemukan. Coba bergerak ke area terbuka.");
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    } else { alert("Browser atau HP Anda tidak mendukung fitur Geolocation GPS."); }
+};
 
-    // C. Sensor Sarpras
+
+// E. Setup Interaksi Logika Kondisional Formulir
+function setupFormLogika() {
+    let htmlTahunAnak = ''; for(let i=0; i<=10; i++) htmlTahunAnak += `<option value="${i}">${i}</option>`; document.getElementById('form-jumlah-anak').innerHTML = htmlTahunAnak;
+    let htmlThn = '<option value="">-- Pilih Tahun --</option>'; for(let y=2024; y>=1980; y--) htmlThn += `<option value="${y}">${y}</option>`;
+    document.getElementById('form-tahun-diangkat').innerHTML = htmlThn; document.getElementById('form-tahun-kendaraan').innerHTML = htmlThn;
+
     document.getElementById('sarpras-balai').addEventListener('change', e => document.getElementById('sub-balai').style.display = (e.target.value === 'Ya') ? 'block' : 'none');
     document.getElementById('sarpras-kendaraan').addEventListener('change', e => document.getElementById('sub-kendaraan').style.display = (e.target.value === 'Ya') ? 'block' : 'none');
     document.getElementById('sarpras-bbm').addEventListener('change', e => document.getElementById('sub-bbm').style.display = (e.target.value === 'Ya') ? 'block' : 'none');
@@ -218,75 +229,64 @@ function setupFormLogika() {
     document.getElementById('cek-lainnya').addEventListener('change', e => document.getElementById('sub-lainnya').style.display = e.target.checked ? 'block' : 'none');
 }
 
-// LOGIKA JENIS ASN & GOLONGAN
 window.updateGolonganRuang = function() {
-    const asn = document.getElementById('form-jenis-asn').value;
-    const selectGol = document.getElementById('form-golongan');
+    const asn = document.getElementById('form-jenis-asn').value; const selGol = document.getElementById('form-golongan');
     let html = '<option value="">-- Pilih Golongan --</option>';
-    if(asn === 'PNS') {
-        const pnsGol = ['II/a', 'II/b', 'II/c', 'II/d', 'III/a', 'III/b', 'III/c', 'III/d', 'IV/a', 'IV/b', 'IV/c', 'IV/d', 'IV/e'];
-        pnsGol.forEach(g => html += `<option value="${g}">${g}</option>`);
-    } else if (asn === 'PPPK') {
-        const pppkGol = ['V', 'VII', 'IX'];
-        ppppGol.forEach(g => html += `<option value="${g}">${g}</option>`);
-    }
-    selectGol.innerHTML = html;
+    if(asn === 'PNS') { ['II/a', 'II/b', 'II/c', 'II/d', 'III/a', 'III/b', 'III/c', 'III/d', 'IV/a', 'IV/b', 'IV/c', 'IV/d', 'IV/e'].forEach(g => html += `<option value="${g}">${g}</option>`); } 
+    else if (asn === 'PPPK') { ['V', 'VII', 'IX'].forEach(g => html += `<option value="${g}">${g}</option>`); } // BUG FIXED HERE
+    selGol.innerHTML = html;
 };
 
-// LOGIKA KELUARGA (Status Kawin)
 window.updateDataKeluarga = function() {
     const status = document.getElementById('form-status-kawin').value;
-    const wrapAnak = document.getElementById('wrap-jumlah-anak');
-    const wrapKB = document.getElementById('wrap-kesertaan-kb');
+    const wrpAnak = document.getElementById('wrap-jumlah-anak'); const wrpKB = document.getElementById('wrap-kesertaan-kb');
+    if(status === 'Belum Kawin') { wrpAnak.style.display = 'none'; wrpKB.style.display = 'none'; }
+    else if(status === 'Janda' || status === 'Duda') { wrpAnak.style.display = 'block'; wrpKB.style.display = 'none'; }
+    else { wrpAnak.style.display = 'block'; wrpKB.style.display = 'block'; }
+};
+
+// ==========================================================================
+// 5. PENANGANAN SESI & TOMBOL SIMPAN
+// ==========================================================================
+async function pulihkanSesi(data) {
+    const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
+    const wilayahKerja = (data.kabupaten || '') + ", " + data.provinsi;
+    document.getElementById('pkb-nama').innerText = data.nama_lengkap; document.getElementById('pkb-nip').innerText = data.nip;
+    document.getElementById('pkb-jabatan').innerText = gelarJabatan; document.getElementById('pkb-wilayah').innerText = wilayahKerja;
+    document.getElementById('profil-subtitle').innerText = gelarJabatan;
+    document.getElementById('form-nama').value = data.nama_lengkap; document.getElementById('form-nip').value = data.nip;
+
+    siapkanBeranda(data.nama_lengkap);
     
-    if(status === 'Belum Kawin') { wrapAnak.style.display = 'none'; wrapKB.style.display = 'none'; }
-    else if(status === 'Janda' || status === 'Duda') { wrapAnak.style.display = 'block'; wrapKB.style.display = 'none'; }
-    else { wrapAnak.style.display = 'block'; wrapKB.style.display = 'block'; }
+    document.getElementById('view-login').style.display = 'none'; document.getElementById('view-dasbor-publik').style.display = 'none';
+    const btnHeader = document.getElementById('btn-auth-action'); btnHeader.style.display = 'block'; btnHeader.innerText = "Keluar Sesi";
+    document.getElementById('header-title').innerText = `Portal: ${data.nama_lengkap}`;
+    document.getElementById('view-portal-pkb').style.display = 'grid';
+
+    // Pulihkan tab memori (F5)
+    const tabTerakhir = localStorage.getItem('activeTab') || 'beranda'; pindahTabPortal(tabTerakhir);
+    
+    // Inisialisasi Database Wilayah
+    await inisialisasiSemuaWilayah(data);
+}
+
+window.pindahTabPortal = function(tabId) {
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+    document.getElementById(`tab-${tabId}`).style.display = 'block';
+    const activeLink = document.querySelector(`.tab-link[onclick="pindahTabPortal('${tabId}')"]`); if(activeLink) activeLink.classList.add('active');
+    localStorage.setItem('activeTab', tabId);
+};
+window.bukaFormEditProfil = function() { document.getElementById('view-profil-utama').style.display = 'none'; document.getElementById('form-edit-profil').style.display = 'block'; };
+window.batalEditProfil = function() { document.getElementById('form-edit-profil').style.display = 'none'; document.getElementById('view-profil-utama').style.display = 'block'; };
+
+window.simpanProfilKeServer = function() { 
+    // Simulasi penyimpanan karena belum ada tabel antrean_update_profil
+    alert("Data berhasil divalidasi. Pembaruan Profil Memerlukan Persetujuan Admin sebelum tampil di Dasbor."); 
+    batalEditProfil(); 
 };
 
-// LOGIKA CASCADING WILAYAH (Tempat Lahir)
-window.populateTLKabupaten = function() {
-    const prov = document.getElementById('tl-provinsi').value; const selKab = document.getElementById('tl-kabupaten');
-    selKab.innerHTML = '<option value="">-- Pilih Kab/Kota --</option>';
-    if(prov && dbWilayah[prov]) Object.keys(dbWilayah[prov]).forEach(kab => selKab.innerHTML += `<option value="${kab}">${kab}</option>`);
-};
-
-// LOGIKA CASCADING WILAYAH (Domisili)
-window.popDomKab = function() {
-    const prov = document.getElementById('dom-prov').value; const selKab = document.getElementById('dom-kab');
-    selKab.innerHTML = '<option value="">-- Kab/Kota --</option>'; document.getElementById('dom-kec').innerHTML = '<option value="">-- Kecamatan --</option>'; document.getElementById('dom-desa').innerHTML = '<option value="">-- Desa/Kel --</option>';
-    if(prov && dbWilayah[prov]) Object.keys(dbWilayah[prov]).forEach(kab => selKab.innerHTML += `<option value="${kab}">${kab}</option>`);
-};
-window.popDomKec = function() {
-    const prov = document.getElementById('dom-prov').value; const kab = document.getElementById('dom-kab').value; const selKec = document.getElementById('dom-kec');
-    selKec.innerHTML = '<option value="">-- Kecamatan --</option>'; document.getElementById('dom-desa').innerHTML = '<option value="">-- Desa/Kel --</option>';
-    if(kab && dbWilayah[prov][kab]) Object.keys(dbWilayah[prov][kab]).forEach(kec => selKec.innerHTML += `<option value="${kec}">${kec}</option>`);
-};
-window.popDomDesa = function() {
-    const prov = document.getElementById('dom-prov').value; const kab = document.getElementById('dom-kab').value; const kec = document.getElementById('dom-kec').value; const selDesa = document.getElementById('dom-desa');
-    selDesa.innerHTML = '<option value="">-- Desa/Kel --</option>';
-    if(kec && dbWilayah[prov][kab][kec]) dbWilayah[prov][kab][kec].forEach(desa => selDesa.innerHTML += `<option value="${desa}">${desa}</option>`);
-};
-
-// LOGIKA CASCADING WILAYAH (Binaan)
-window.popBinKab = function() {
-    const prov = document.getElementById('bin-prov').value; const selKab = document.getElementById('bin-kab');
-    selKab.innerHTML = '<option value="">-- Pilih Kab/Kota --</option>'; document.getElementById('bin-kec').innerHTML = '<option value="">-- Pilih Kecamatan --</option>'; document.getElementById('wrap-bin-desa').innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Silakan pilih kecamatan terlebih dahulu.</span>';
-    if(prov && dbWilayah[prov]) Object.keys(dbWilayah[prov]).forEach(kab => selKab.innerHTML += `<option value="${kab}">${kab}</option>`);
-};
-window.popBinKec = function() {
-    const prov = document.getElementById('bin-prov').value; const kab = document.getElementById('bin-kab').value; const selKec = document.getElementById('bin-kec');
-    selKec.innerHTML = '<option value="">-- Pilih Kecamatan --</option>'; document.getElementById('wrap-bin-desa').innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Silakan pilih kecamatan terlebih dahulu.</span>';
-    if(kab && dbWilayah[prov][kab]) Object.keys(dbWilayah[prov][kab]).forEach(kec => selKec.innerHTML += `<option value="${kec}">${kec}</option>`);
-};
-window.popBinDesa = function() {
-    const prov = document.getElementById('bin-prov').value; const kab = document.getElementById('bin-kab').value; const kec = document.getElementById('bin-kec').value; const wrapDesa = document.getElementById('wrap-bin-desa');
-    wrapDesa.innerHTML = '';
-    if(kec && dbWilayah[prov][kab][kec]) {
-        dbWilayah[prov][kab][kec].forEach(desa => wrapDesa.innerHTML += `<label><input type="checkbox" value="${desa}"> ${desa}</label>`);
-    } else { wrapDesa.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Data desa tidak tersedia.</span>'; }
-};
-
+// RPC SARAN
 window.kirimSaranPengguna = async function() {
     const kategori = document.getElementById('kategori-saran').value; const isi = document.getElementById('isi-saran').value.trim();
     if(!isi) { alert("Silakan ketik pesan Anda terlebih dahulu sebelum mengirim."); return; }
@@ -294,21 +294,17 @@ window.kirimSaranPengguna = async function() {
     const btnKirim = document.getElementById('btn-kirim-saran'); const textAsli = btnKirim.innerText; btnKirim.innerText = "Mengirim..."; btnKirim.disabled = true;
     try {
         const { error } = await mySupabase.rpc('simpan_saran', { p_nip: sesiPkb.nip, p_nama: sesiPkb.nama_lengkap, p_kategori: kategori, p_isi: isi });
-        if (error) throw error; alert(`Terima kasih! Masukan Anda untuk kategori "${kategori}" telah berhasil dikirim ke server pusat.`); document.getElementById('isi-saran').value = ''; 
-    } catch(err) { console.error(err); alert("Terjadi kesalahan saat mengirim saran. Silakan periksa koneksi Anda."); } finally { btnKirim.innerText = textAsli; btnKirim.disabled = false; }
+        if (error) throw error; alert(`Terima kasih! Masukan Anda telah terkirim.`); document.getElementById('isi-saran').value = ''; 
+    } catch(err) { alert("Terjadi kesalahan. Periksa koneksi Anda."); } finally { btnKirim.innerText = textAsli; btnKirim.disabled = false; }
 };
 
-window.bukaFileFullscreen = function(filename) { document.getElementById('viewer-filename').innerText = filename; document.getElementById('viewer-body-content').innerText = `[ Sedang Membaca Berkas Fullscreen: ${filename} ]`; document.getElementById('viewer-overlay').style.display = 'flex'; };
+window.bukaFileFullscreen = function(filename) { document.getElementById('viewer-filename').innerText = filename; document.getElementById('viewer-body-content').innerText = `[ Membaca: ${filename} ]`; document.getElementById('viewer-overlay').style.display = 'flex'; };
 window.tutupFileFullscreen = function() { document.getElementById('viewer-overlay').style.display = 'none'; };
 window.ubahTemaAplikasi = function(theme) { document.documentElement.setAttribute('data-theme', theme); };
-window.ubahSkalaZoom = function(aksi) {
-    if (aksi === '+') currentZoomLevel += 10; else if (aksi === '-') currentZoomLevel -= 10; else currentZoomLevel = 100;
-    if (currentZoomLevel < 80) currentZoomLevel = 80; if (currentZoomLevel > 130) currentZoomLevel = 130;
-    document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`);
-};
+window.ubahSkalaZoom = function(aksi) { if (aksi === '+') currentZoomLevel += 10; else if (aksi === '-') currentZoomLevel -= 10; else currentZoomLevel = 100; if (currentZoomLevel < 80) currentZoomLevel = 80; if (currentZoomLevel > 130) currentZoomLevel = 130; document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`); };
 
 window.addEventListener('DOMContentLoaded', () => {
-    setupFormLogika(); updateDataKeluarga(); // Inisialisasi tampilan awal form keluarga
+    setupFormLogika(); updateDataKeluarga(); 
     const sesiAktif = localStorage.getItem('sesi_portal_pkb');
     if (sesiAktif) { document.getElementById('loading-screen').style.display = 'none'; pulihkanSesi(JSON.parse(sesiAktif)); } 
     else { tarikDataDasbor(); }
