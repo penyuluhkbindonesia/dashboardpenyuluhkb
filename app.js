@@ -1,20 +1,15 @@
 // ==========================================================================
-// 1. KONFIGURASI OPERASIONAL SERVER UTAMA
+// 1. KONFIGURASI SERVER
 // ==========================================================================
 const SUPABASE_URL = 'https://cdnqqrjbdhoglvlqbxoq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbnFxcmpiZGhvZ2x2bHFieG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDQ1NDIsImV4cCI6MjA5NjU4MDU0Mn0.dHQbkEIJe5L4bfyJqZkJkXTPX0Abot4GBw7_4O3eNwk';
 const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let dataMaster = []; 
 let filterProvinsiAktif = null;
 let currentZoomLevel = 100; 
 
-let chartProvInstance = null;
-let chartUmurInstance = null;
-let chartJabatanInstance = null;
-let chartGenerasiInstance = null;
-let chartPendidikanInstance = null;
-let chartGolonganInstance = null;
+let chartProvInstance = null; let chartUmurInstance = null; let chartJabatanInstance = null;
+let chartGenerasiInstance = null; let chartPendidikanInstance = null; let chartGolonganInstance = null;
 
 function formatAngka(angka) { return Number(angka).toLocaleString('id-ID'); }
 function formatTanggalIndo(tglStr) {
@@ -25,35 +20,26 @@ function formatTanggalIndo(tglStr) {
 }
 
 // ==========================================================================
-// 2. ALUR SINKRONISASI BASIS DATA NASIONAL
+// 2. MESIN BARU (RPC SERVER-SIDE)
 // ==========================================================================
-async function inisialisasiDasbor() {
+async function tarikDataDasbor() {
+    document.getElementById('loading-screen').style.display = 'flex';
     try {
-        let allData = []; let step = 1000; let from = 0; let hasMore = true;
-        while (hasMore) {
-            const { data, error } = await mySupabase
-                .from('data_aktif_pkb')
-                .select('nip, nama_lengkap, kabupaten, provinsi, jenis_pegawai, jenis_kelamin, jabatan, golongan, pendidikan_akhir, tanggal_lahir, tanggal_pensiun')
-                .range(from, from + step - 1);
-            if (error) { console.error(error); break; }
-            allData = allData.concat(data);
-            if (data.length < step) { hasMore = false; } else { from += step; }
-        }
-        dataMaster = allData;
-        renderDasbor();
+        // Kita tidak lagi menyedot puluhan ribu data! Kita hanya menanyakan hasil rekap ke Server.
+        const { data, error } = await mySupabase.rpc('get_rekap_dasbor', { p_provinsi: filterProvinsiAktif });
+        if (error) throw error;
+        renderVisualDasbor(data);
     } catch (error) {
-        console.error("Sinkronisasi gagal:", error);
-        document.getElementById('loading-screen').style.display = 'none'; 
+        console.error("Gagal menarik data dari server:", error);
     }
+    document.getElementById('loading-screen').style.display = 'none';
 }
 
-function renderDasbor() {
-    let dataAktif = dataMaster;
+function renderVisualDasbor(dataServer) {
+    // 1. Update Label & Tombol Filter
     const labelCakupan = document.getElementById('label-cakupan');
     const btnReset = document.getElementById('btn-reset-filter');
-
     if (filterProvinsiAktif) {
-        dataAktif = dataMaster.filter(d => d.provinsi === filterProvinsiAktif);
         labelCakupan.innerHTML = `Data PKB/PLKB : <span style="color:#0056b3;">PROVINSI ${filterProvinsiAktif}</span>`;
         btnReset.style.display = 'block';
     } else {
@@ -61,68 +47,60 @@ function renderDasbor() {
         btnReset.style.display = 'none';
     }
 
-    const bulanIni = '2026-06'; const tahunIni = '2026';
-    let kpiPns = 0, kpiPppk = 0, kpiPensiunBln = 0, kpiPensiunThn = 0, kpiPria = 0, kpiWanita = 0;
-    let provCount = {}, umurCount = { '< 30': 0, '30-39': 0, '40-49': 0, '50-59': 0, '60+': 0 };
+    // 2. Tembak Angka KPI Langsung
+    const kpi = dataServer.kpi;
+    document.getElementById('kpi-total').innerText = formatAngka(kpi.total);
+    document.getElementById('kpi-pns').innerText = formatAngka(kpi.pns);
+    document.getElementById('kpi-pppk').innerText = formatAngka(kpi.pppk);
+    document.getElementById('kpi-pria').innerText = formatAngka(kpi.pria);
+    document.getElementById('kpi-wanita').innerText = formatAngka(kpi.wanita);
+    document.getElementById('kpi-pensiun-bulan').innerText = formatAngka(kpi.pensiun_bln_ini);
+    document.getElementById('kpi-pensiun-tahun').innerText = formatAngka(kpi.pensiun_thn_ini);
+
+    // 3. Olah Data Tahun Lahir menjadi Umur & Generasi di Client
+    let umurCount = { '< 30': 0, '30-39': 0, '40-49': 0, '50-59': 0, '60+': 0 };
     let generasiCount = { 'Gen Z': 0, 'Milenial': 0, 'Gen X': 0, 'Baby Boomer': 0 };
-    let jabatanCount = {}, pendidikanCount = {}, golonganCount = {};
-    let dataPensiunTabel = [];
+    
+    if (dataServer.tahun_lahir) {
+        Object.entries(dataServer.tahun_lahir).forEach(([thnStr, jml]) => {
+            const thn = parseInt(thnStr);
+            const usia = 2026 - thn;
+            
+            if (usia < 30) umurCount['< 30'] += jml;
+            else if (usia <= 39) umurCount['30-39'] += jml;
+            else if (usia <= 49) umurCount['40-49'] += jml;
+            else if (usia <= 59) umurCount['50-59'] += jml;
+            else umurCount['60+'] += jml;
 
-    dataAktif.forEach(row => {
-        if (row.jenis_pegawai === 'PNS') kpiPns++;
-        if (row.jenis_pegawai === 'PPPK') kpiPppk++;
-        if (row.jenis_kelamin) {
-            const jk = row.jenis_kelamin.toLowerCase();
-            if (jk.includes('laki')) kpiPria++;
-            else if (jk.includes('perempuan') || jk.includes('wanita')) kpiWanita++;
-        }
-        if (row.tanggal_pensiun) {
-            if (row.tanggal_pensiun.startsWith(bulanIni)) kpiPensiunBln++;
-            if (row.tanggal_pensiun.startsWith(tahunIni)) { kpiPensiunThn++; dataPensiunTabel.push(row); }
-        }
-        if (row.provinsi) provCount[row.provinsi] = (provCount[row.provinsi] || 0) + 1;
-        if (row.jabatan) jabatanCount[row.jabatan] = (jabatanCount[row.jabatan] || 0) + 1;
-        if (row.pendidikan_akhir) pendidikanCount[row.pendidikan_akhir] = (pendidikanCount[row.pendidikan_akhir] || 0) + 1;
-        if (row.golongan) golonganCount[row.golongan] = (golonganCount[row.golongan] || 0) + 1;
+            if (thn >= 1997) generasiCount['Gen Z'] += jml;
+            else if (thn >= 1981) generasiCount['Milenial'] += jml;
+            else if (thn >= 1965) generasiCount['Gen X'] += jml;
+            else generasiCount['Baby Boomer'] += jml;
+        });
+    }
 
-        if (row.tanggal_lahir) {
-            const tahunLahir = parseInt(row.tanggal_lahir.split('-')[0]); const usia = 2026 - tahunLahir;
-            if (usia < 30) umurCount['< 30']++;
-            else if (usia <= 39) umurCount['30-39']++;
-            else if (usia <= 49) umurCount['40-49']++;
-            else if (usia <= 59) umurCount['50-59']++;
-            else umurCount['60+']++;
+    // 4. Render Tabel Pensiun
+    const tbodyPensiun = document.querySelector('#tabelPensiun tbody');
+    tbodyPensiun.innerHTML = '';
+    if (dataServer.tabel_pensiun) {
+        dataServer.tabel_pensiun.forEach(p => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td>${p.nama_lengkap}</td><td>${p.provinsi}</td><td>${p.jabatan}</td><td style="font-weight:bold; color:#dc3545;">${formatTanggalIndo(p.tanggal_pensiun)}</td>`;
+            tbodyPensiun.appendChild(tr);
+        });
+    }
 
-            if (tahunLahir >= 1997) generasiCount['Gen Z']++;
-            else if (tahunLahir >= 1981) generasiCount['Milenial']++;
-            else if (tahunLahir >= 1965) generasiCount['Gen X']++;
-            else generasiCount['Baby Boomer']++;
-        }
-    });
-
-    document.getElementById('kpi-total').innerText = formatAngka(dataAktif.length);
-    document.getElementById('kpi-pns').innerText = formatAngka(kpiPns);
-    document.getElementById('kpi-pppk').innerText = formatAngka(kpiPppk);
-    document.getElementById('kpi-pria').innerText = formatAngka(kpiPria);
-    document.getElementById('kpi-wanita').innerText = formatAngka(kpiWanita);
-    document.getElementById('kpi-pensiun-bulan').innerText = formatAngka(kpiPensiunBln);
-    document.getElementById('kpi-pensiun-tahun').innerText = formatAngka(kpiPensiunThn);
-
-    dataPensiunTabel.sort((a, b) => new Date(a.tanggal_pensiun) - new Date(b.tanggal_pensiun));
-    const tbodyPensiun = document.querySelector('#tabelPensiun tbody'); tbodyPensiun.innerHTML = '';
-    dataPensiunTabel.slice(0, 50).forEach(p => {
-        let tr = document.createElement('tr');
-        tr.innerHTML = `<td>${p.nama_lengkap}</td><td>${p.provinsi}</td><td>${p.jabatan}</td><td style="font-weight:bold; color:#dc3545;">${formatTanggalIndo(p.tanggal_pensiun)}</td>`;
-        tbodyPensiun.appendChild(tr);
-    });
-
-    gambarChartProvinsi(provCount); gambarChartUmur(umurCount); gambarChartJabatan(jabatanCount);
-    gambarChartGenerasi(generasiCount); gambarChartPendidikan(pendidikanCount); gambarChartGolongan(golonganCount);
-    document.getElementById('loading-screen').style.display = 'none';
+    // 5. Gambar Ulang Grafik
+    if(dataServer.sebaran_provinsi) gambarChartProvinsi(dataServer.sebaran_provinsi);
+    if(dataServer.pendidikan) gambarChartPendidikan(dataServer.pendidikan);
+    if(dataServer.golongan) gambarChartGolongan(dataServer.golongan);
+    if(dataServer.jabatan) gambarChartJabatan(dataServer.jabatan);
+    gambarChartUmur(umurCount);
+    gambarChartGenerasi(generasiCount);
 }
 
 // ==========================================================================
-// 3. LOGIKA GRAPHICAL USER INTERFACE (CHART RENDERING)
+// 3. RENDER GRAFIK
 // ==========================================================================
 function gambarChartProvinsi(provData) {
     const ctx = document.getElementById('chartProvinsi').getContext('2d'); if (chartProvInstance) chartProvInstance.destroy();
@@ -130,7 +108,7 @@ function gambarChartProvinsi(provData) {
     const labels = sortedProv.map(i => i[0]); const values = sortedProv.map(i => i[1]);
     chartProvInstance = new Chart(ctx, {
         type: 'bar', data: { labels: labels, datasets: [{ label: 'Total', data: values, backgroundColor: '#007bff', borderRadius: 4 }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, onClick: (e, active) => { if (active.length > 0) { filterProvinsiAktif = labels[active[0].index]; renderDasbor(); } } }
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, onClick: (e, active) => { if (active.length > 0) { filterProvinsiAktif = labels[active[0].index]; tarikDataDasbor(); } } }
     });
 }
 function gambarChartUmur(uData) {
@@ -144,7 +122,7 @@ function gambarChartGenerasi(gData) {
 function gambarChartJabatan(jData) {
     const ctx = document.getElementById('chartJabatan').getContext('2d'); if (chartJabatanInstance) chartJabatanInstance.destroy();
     const sorted = Object.entries(jData).sort((a, b) => b[1] - a[1]);
-    chartJabatanInstance = new Chart(ctx, { type: 'doughnut', data: { labels: sorted.map(i => i[0]), datasets: [{ data: sorted.map(i => i[1]), backgroundColor: ['#007bff', '#17a2b8', '#28a745', '#ffc107', '#dc3545', '#6f42c1'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10 } } } } });
+    chartJabatanInstance = new Chart(ctx, { type: 'doughnut', data: { labels: sorted.map(i => i[0]), datasets: [{ data: sorted.map(i => i[1]), backgroundColor: ['#007bff', '#17a2b8', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#e83e8c'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10 } } } } });
 }
 function gambarChartPendidikan(pData) {
     const ctx = document.getElementById('chartPendidikan').getContext('2d'); if (chartPendidikanInstance) chartPendidikanInstance.destroy();
@@ -157,10 +135,10 @@ function gambarChartGolongan(goData) {
     chartGolonganInstance = new Chart(ctx, { type: 'bar', data: { labels: sorted.map(i => i[0]), datasets: [{ data: sorted.map(i => i[1]), backgroundColor: '#6c757d', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
 }
 
-window.resetFilter = function() { filterProvinsiAktif = null; renderDasbor(); };
+window.resetFilter = function() { filterProvinsiAktif = null; tarikDataDasbor(); };
 
 // ==========================================================================
-// 4. SISTEM OTENTIKASI & MULTI-ROLE ROUTING SYSTEM
+// 4. SISTEM OTENTIKASI SECURE (ANTI-SCRAPING)
 // ==========================================================================
 window.penyesuaianPlaceholderLogin = function() {
     const role = document.getElementById('login-role').value;
@@ -199,18 +177,17 @@ window.eksekusiLogin = async function() {
     if (!user || !pass) return;
 
     if (role === 'superadmin') {
-        if (user === 'superadmin' && pass === 'admin') {
-            masukHalamanRole('superadmin', 'Super Admin Pusat');
-        } else { memunculkanErrorLogin(); }
+        if (user === 'superadmin' && pass === 'admin') masukHalamanRole('superadmin', 'Super Admin Pusat');
+        else memunculkanErrorLogin();
     } 
     else if (role === 'admin') {
-        if (user === 'admin' && pass === 'admin') {
-            masukHalamanRole('admin', 'Admin Regional');
-        } else { memunculkanErrorLogin(); }
+        if (user === 'admin' && pass === 'admin') masukHalamanRole('admin', 'Admin Regional');
+        else memunculkanErrorLogin();
     } 
     else if (role === 'pkb') {
         try {
-            const { data, error } = await mySupabase.from('data_aktif_pkb').select('*').eq('nip', user).single();
+            // LOGIN AMAN: Menggunakan RPC. Hacker tidak bisa lagi menyedot tabel utama!
+            const { data, error } = await mySupabase.rpc('otentikasi_pegawai', { p_nip: user });
             if (error || !data) { memunculkanErrorLogin("NIP Tidak Ditemukan!"); }
             else {
                 document.getElementById('pkb-nama').innerText = data.nama_lengkap;
@@ -232,15 +209,11 @@ function memunculkanErrorLogin(customMsg) {
 function masukHalamanRole(role, namaHeader) {
     document.getElementById('view-login').style.display = 'none';
     document.getElementById('inputUser').value = ''; document.getElementById('inputPass').value = '';
-    
     document.getElementById('btn-auth-action').innerText = "Keluar Sesi";
     document.getElementById('header-title').innerText = `Portal: ${namaHeader}`;
 
     if (role === 'superadmin') document.getElementById('view-superadmin').style.display = 'block';
-    if (role === 'admin') {
-        document.getElementById('view-admin').style.display = 'block';
-        document.getElementById('title-admin-regional').innerText = `Dashboard Admin PenyuluhKB : Regional`;
-    }
+    if (role === 'admin') document.getElementById('view-admin').style.display = 'block';
     if (role === 'pkb') {
         document.getElementById('view-portal-pkb').style.display = 'grid';
         pindahTabPortal('profil');
@@ -248,48 +221,30 @@ function masukHalamanRole(role, namaHeader) {
 }
 
 // ==========================================================================
-// 5. INTERFASE INTERNAL PORTAL (TABS ROUTING & AKSESIBILITAS)
+// 5. NAVIGASI PORTAL & AKSESIBILITAS
 // ==========================================================================
 window.pindahTabPortal = function(tabId) {
-    const contents = document.querySelectorAll('.tab-content');
-    contents.forEach(c => c.style.display = 'none');
-    
-    const links = document.querySelectorAll('.tab-link');
-    links.forEach(l => l.classList.remove('active'));
-
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
     document.getElementById(`tab-${tabId}`).style.display = 'block';
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-    }
+    if (event && event.currentTarget) event.currentTarget.classList.add('active');
 };
-
-window.simpanPembaruanProfilDummy = function() {
-    alert("Pembaharuan Profil Memerlukan Persetujuan Admin.");
-};
-
+window.simpanPembaruanProfilDummy = function() { alert("Pembaharuan Profil Memerlukan Persetujuan Admin."); };
 window.bukaFileFullscreen = function(filename) {
     document.getElementById('viewer-filename').innerText = filename;
     document.getElementById('viewer-body-content').innerText = `[ Sedang Membaca Berkas Fullscreen: ${filename} ]`;
     document.getElementById('viewer-overlay').style.display = 'flex';
 };
-
-window.tutupFileFullscreen = function() {
-    document.getElementById('viewer-overlay').style.display = 'none';
-};
-
-window.ubahTemaAplikasi = function(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-};
-
+window.tutupFileFullscreen = function() { document.getElementById('viewer-overlay').style.display = 'none'; };
+window.ubahTemaAplikasi = function(theme) { document.documentElement.setAttribute('data-theme', theme); };
 window.ubahSkalaZoom = function(aksi) {
     if (aksi === '+') currentZoomLevel += 10;
     else if (aksi === '-') currentZoomLevel -= 10;
     else currentZoomLevel = 100;
-
     if (currentZoomLevel < 80) currentZoomLevel = 80;
     if (currentZoomLevel > 130) currentZoomLevel = 130;
-
     document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`);
 };
 
-window.addEventListener('DOMContentLoaded', inisialisasiDasbor);
+// MULAI APLIKASI
+window.addEventListener('DOMContentLoaded', tarikDataDasbor);
