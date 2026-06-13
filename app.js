@@ -64,12 +64,12 @@ function renderVisualDasbor(ds) {
     if(ds && ds.sebaran_provinsi) gambarChartProvinsi(ds.sebaran_provinsi); if(ds && ds.pendidikan) gambarChartPendidikan(ds.pendidikan); if(ds && ds.golongan) gambarChartGolongan(ds.golongan); if(ds && ds.jabatan) gambarChartJabatan(ds.jabatan); gambarChartUmur(umurCount); gambarChartGenerasi(genCount);
 }
 
-function gambarChartProvinsi(d) { const ctx = document.getElementById('chartProvinsi')?.getContext('2d'); if(!ctx) return; if(chartProvInstance) chartProvInstance.destroy(); const sorted = Object.entries(d).sort((a,b)=>b[1]-a[1]); chartProvInstance = new Chart(ctx, {type:'bar', data:{labels:sorted.map(i=>i[0]), datasets:[{label:'Total', data:sorted.map(i=>i[1]), backgroundColor:'#007bff'}]}, options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, onClick:(e, act)=>{if(act.length>0){filterProvinsiAktif=sorted[act[0].index][0]; tarikDataDasbor();}}, plugins:{legend:{display:false}}}});}
-function gambarChartUmur(d) { const ctx = document.getElementById('chartUmur')?.getContext('2d'); if(!ctx) return; if(chartUmurInstance) chartUmurInstance.destroy(); chartUmurInstance = new Chart(ctx, {type:'bar', data:{labels:Object.keys(d), datasets:[{data:Object.values(d), backgroundColor:['#007bff','#28a745','#ffc107','#fd7e14','#dc3545']}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}});}
+function gambarChartProvinsi(d) { const ctx = document.getElementById('chartProvinsi')?.getContext('2d'); if(!ctx) return; if(chartProvInstance) chartProvInstance.destroy(); const sorted = Object.entries(d).sort((a,b)=>b[1]-a[1]); chartProvInstance = new Chart(ctx, {type:'bar', data:{labels:sorted.map(i=>i[0]), datasets:[{label:'Total', data:sorted.map(i=>i[1]), backgroundColor:'#007bff', borderRadius: 4}]}, options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, onClick:(e, act)=>{if(act.length>0){filterProvinsiAktif=sorted[act[0].index][0]; tarikDataDasbor();}}, plugins:{legend:{display:false}}}});}
+function gambarChartUmur(d) { const ctx = document.getElementById('chartUmur')?.getContext('2d'); if(!ctx) return; if(chartUmurInstance) chartUmurInstance.destroy(); chartUmurInstance = new Chart(ctx, {type:'bar', data:{labels:Object.keys(d), datasets:[{data:Object.values(d), backgroundColor:['#007bff','#28a745','#ffc107','#fd7e14','#dc3545'], borderRadius: 4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}});}
 function gambarChartGenerasi(d) { const ctx = document.getElementById('chartGenerasi')?.getContext('2d'); if(!ctx) return; if(chartGenerasiInstance) chartGenerasiInstance.destroy(); chartGenerasiInstance = new Chart(ctx, {type:'pie', data:{labels:Object.keys(d), datasets:[{data:Object.values(d), backgroundColor:['#6f42c1','#17a2b8','#fd7e14','#e83e8c']}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}});}
 function gambarChartJabatan(d) { const ctx = document.getElementById('chartJabatan')?.getContext('2d'); if(!ctx) return; if(chartJabatanInstance) chartJabatanInstance.destroy(); const sorted = Object.entries(d).sort((a,b)=>b[1]-a[1]); chartJabatanInstance = new Chart(ctx, {type:'doughnut', data:{labels:sorted.map(i=>i[0]), datasets:[{data:sorted.map(i=>i[1]), backgroundColor:['#007bff','#17a2b8','#28a745','#ffc107','#dc3545','#6f42c1','#e83e8c','#fd7e14','#20c997','#6c757d']}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{boxWidth:10}}}}});}
-function gambarChartPendidikan(d) { const ctx = document.getElementById('chartPendidikan')?.getContext('2d'); if(!ctx) return; if(chartPendidikanInstance) chartPendidikanInstance.destroy(); const sorted = Object.entries(d).sort((a,b)=>b[1]-a[1]); chartPendidikanInstance = new Chart(ctx, {type:'bar', data:{labels:sorted.map(i=>i[0]), datasets:[{data:sorted.map(i=>i[1]), backgroundColor:'#17a2b8'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}});}
-function gambarChartGolongan(d) { const ctx = document.getElementById('chartGolongan')?.getContext('2d'); if(!ctx) return; if(chartGolonganInstance) chartGolonganInstance.destroy(); const sorted = Object.entries(d).sort((a,b)=>a[0].localeCompare(b[0])); chartGolonganInstance = new Chart(ctx, {type:'bar', data:{labels:sorted.map(i=>i[0]), datasets:[{data:sorted.map(i=>i[1]), backgroundColor:'#6c757d'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}});}
+function gambarChartPendidikan(d) { const ctx = document.getElementById('chartPendidikan')?.getContext('2d'); if(!ctx) return; if(chartPendidikanInstance) chartPendidikanInstance.destroy(); const sorted = Object.entries(d).sort((a,b)=>b[1]-a[1]); chartPendidikanInstance = new Chart(ctx, {type:'bar', data:{labels:sorted.map(i=>i[0]), datasets:[{data:sorted.map(i=>i[1]), backgroundColor:'#17a2b8', borderRadius: 4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}});}
+function gambarChartGolongan(d) { const ctx = document.getElementById('chartGolongan')?.getContext('2d'); if(!ctx) return; if(chartGolonganInstance) chartGolonganInstance.destroy(); const sorted = Object.entries(d).sort((a,b)=>a[0].localeCompare(b[0])); chartGolonganInstance = new Chart(ctx, {type:'bar', data:{labels:sorted.map(i=>i[0]), datasets:[{data:sorted.map(i=>i[1]), backgroundColor:'#6c757d', borderRadius: 4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}});}
 window.resetFilter = function() { filterProvinsiAktif = null; tarikDataDasbor(); };
 
 // ==========================================================================
@@ -366,7 +366,8 @@ window.simpanProfilKeServer = async function() {
     const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : '';
 
     let infoPerubahan = "Memperbarui Data Profil Terkini";
-
+    const oldSesiStr = localStorage.getItem('sesi_portal_pkb');
+    
     const payload = {
         p_nip: nip, p_nama: getName('form-nama'), p_gelar_dp: getName('form-gelar-depan'), p_gelar_bk: getName('form-gelar-belakang'),
         p_tl_prov: tlProvText.replace('-- Pilih Provinsi --', ''), p_tl_kab: tlKabText.replace('-- Pilih Kab/Kota --', ''), p_tgl_lahir: getVal('form-tanggal-lahir'),
@@ -381,6 +382,22 @@ window.simpanProfilKeServer = async function() {
         p_sarpras_lain: getCheckedValues('chk-lain') + (document.getElementById('cek-lainnya') && document.getElementById('cek-lainnya').checked ? `, ${getName('form-sarpras-lainnya-sebutkan')}` : ''),
         p_foto: base64FotoProfilAktif, p_jarak: getVal('form-jarak'), p_log_perubahan: infoPerubahan
     };
+
+    if (oldSesiStr) {
+        const old = JSON.parse(oldSesiStr); let changes = [];
+        if (old.nama_lengkap !== payload.p_nama) changes.push("Nama Lengkap");
+        if (old.pendidikan_akhir !== payload.p_pendidikan) changes.push("Pendidikan");
+        if (old.status_perkawinan !== payload.p_status_kawin) changes.push("Status Kawin");
+        if (old.jumlah_anak !== payload.p_jml_anak) changes.push("Jml Anak");
+        if (old.domisili_desa !== payload.p_dom_desa) changes.push("Alamat Domisili");
+        if (old.desa_binaan !== payload.p_bin_desa) changes.push("Desa Binaan");
+        if (old.jarak_binaan !== payload.p_jarak) changes.push("Jarak Binaan");
+        if (old.memiliki_balai !== payload.p_miliki_balai) changes.push("Status Balai");
+        if (old.kendaraan_dinas !== payload.p_kendaraan) changes.push("Kendaraan");
+        if (old.foto_profil !== payload.p_foto && payload.p_foto !== "") changes.push("Foto Profil Baru");
+        if (changes.length > 0) { payload.p_log_perubahan = "Memperbarui: " + changes.join(', '); } 
+        else { payload.p_log_perubahan = "Menyimpan ulang profil (Tanpa Perubahan Signifikan)"; }
+    }
 
     try {
         const { data, error } = await mySupabase.rpc('simpan_update_profil', payload);
