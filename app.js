@@ -21,13 +21,14 @@ function formatWaktuIndo(isoString) {
 }
 
 // ==========================================================================
-// MESIN DASBOR & GRAFIK (DISEMBUNYIKAN UNTUK KETERBACAAN - TETAP SAMA SEPERTI SEBELUMNYA)
+// 2. MESIN DASBOR & VISUALISASI GRAFIK
 // ==========================================================================
 async function tarikDataDasbor() {
     document.getElementById('loading-screen').style.display = 'flex';
     try { const { data, error } = await mySupabase.rpc('get_rekap_dasbor', { p_provinsi: filterProvinsiAktif }); if (!error) renderVisualDasbor(data); } catch (e) {}
     document.getElementById('loading-screen').style.display = 'none';
 }
+
 function renderVisualDasbor(ds) {
     const lbl = document.getElementById('label-cakupan'); const btn = document.getElementById('btn-reset-filter');
     if (filterProvinsiAktif) { lbl.innerHTML = `Data : <span style="color:#0056b3;">PROVINSI ${filterProvinsiAktif}</span>`; btn.style.display = 'block'; } 
@@ -57,7 +58,7 @@ function gambarChartGolongan(d) { const ctx = document.getElementById('chartGolo
 window.resetFilter = function() { filterProvinsiAktif = null; tarikDataDasbor(); };
 
 // ==========================================================================
-// MANAJEMEN SESI & LOGIN
+// 3. MANAJEMEN SESI & LOGIN
 // ==========================================================================
 window.togglePasswordVisibility = function() {
     const pIn = document.getElementById('inputPass'); const ic = document.getElementById('eye-icon-path');
@@ -92,26 +93,19 @@ window.eksekusiLogin = async function() {
 };
 
 // ==========================================================================
-// PENGELOLAAN REFERENSI WILAYAH (SOLUSI ASYNCHRONOUS TUNTAS)
+// 4. PENGELOLAAN REFERENSI WILAYAH (SUPABASE CASCADING)
 // ==========================================================================
 async function fetchWilayah(level, kodeInduk, targetId, placeholderText) {
     const target = document.getElementById(targetId); target.innerHTML = `<option value="">-- Memuat... --</option>`;
     let query = mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', level).order('nama');
     if (kodeInduk) query = query.eq('kode_induk', kodeInduk); else query = query.is('kode_induk', null);
-    const { data } = await query; 
-    target.innerHTML = `<option value="">${placeholderText}</option>`;
+    const { data } = await query; target.innerHTML = `<option value="">${placeholderText}</option>`;
     if (data) { data.forEach(w => { target.innerHTML += `<option value="${w.kode}">${w.nama}</option>`; }); }
 }
 
-// Helper untuk mencocokkan Teks Database dengan Option di Dropdown HTML
 async function setSelectByText(selectId, textStr) {
-    if(!textStr) return null;
-    const sel = document.getElementById(selectId);
-    for(let i=0; i<sel.options.length; i++) {
-        if(sel.options[i].text.toUpperCase() === textStr.toUpperCase()) {
-            sel.selectedIndex = i; return sel.options[i].value;
-        }
-    }
+    if(!textStr) return null; const sel = document.getElementById(selectId);
+    for(let i=0; i<sel.options.length; i++) { if(sel.options[i].text.toUpperCase() === textStr.toUpperCase()) { sel.selectedIndex = i; return sel.options[i].value; } }
     return null;
 }
 
@@ -128,7 +122,7 @@ window.popBinDesa = async function() {
 };
 
 // ==========================================================================
-// INJEKSI DATA KE FORMULIR (PEMULIHAN SESI)
+// 5. INJEKSI DATA KE FORMULIR & TAMPILAN PROFIL (PEMULIHAN SESI)
 // ==========================================================================
 let base64FotoProfilAktif = "";
 
@@ -191,7 +185,7 @@ async function pulihkanSesi(data) {
         base64FotoProfilAktif = data.foto_profil;
     }
 
-    // 2. INJEKSI FORMULIR (SINKRONISASI ASYNC YANG SEMPURNA)
+    // 2. INJEKSI FORMULIR
     document.getElementById('form-nama').value = data.nama_lengkap || '';
     document.getElementById('form-nip').value = data.nip || '';
     document.getElementById('form-gelar-depan').value = data.gelar_depan || '';
@@ -222,7 +216,6 @@ async function pulihkanSesi(data) {
     if(data.biaya_perawatan) { document.getElementById('sarpras-perawatan').value = data.biaya_perawatan; document.getElementById('sarpras-perawatan').dispatchEvent(new Event('change')); }
     setCheckboxes('chk-rawat', data.sumber_dana_perawatan);
     
-    // Perbaikan Logika Checkbox Lainnya
     const stdSarpras = ['Laptop', 'HP', 'Tablet', 'Pakaian Seragam Dinas', 'PKB/PLKB Kit'];
     let customSarpras = []; document.querySelectorAll('.chk-lain').forEach(el => el.checked = false); document.getElementById('cek-lainnya').checked = false; document.getElementById('form-sarpras-lainnya-sebutkan').value = ''; document.getElementById('sub-lainnya').style.display = 'none';
     if(data.sarpras_lainnya) {
@@ -261,7 +254,7 @@ async function pulihkanSesi(data) {
                     await fetchWilayah('Kecamatan', kData[0].kode, 'bin-kec', '-- Pilih Kecamatan --');
                     const kdBinKec = await setSelectByText('bin-kec', data.kecamatan_binaan);
                     if(kdBinKec) {
-                        await popBinDesa(); // Load checkboxes
+                        await popBinDesa();
                         if(data.desa_binaan) { const desaTersimpan = data.desa_binaan.split(',').map(v=>v.trim()); document.querySelectorAll('.chk-binaan-desa').forEach(el => { if(desaTersimpan.includes(el.value)) el.checked = true; }); }
                     }
                 }
@@ -292,6 +285,26 @@ function setupFormLogika() {
     document.getElementById('cek-lainnya').addEventListener('change', e => document.getElementById('sub-lainnya').style.display = e.target.checked ? 'block' : 'none');
 }
 
+window.updateGolonganRuang = function() {
+    const asn = document.getElementById('form-jenis-asn').value; const selGol = document.getElementById('form-golongan');
+    let html = '<option value="">-- Pilih Golongan --</option>';
+    if(asn === 'PNS') { ['II/a', 'II/b', 'II/c', 'II/d', 'III/a', 'III/b', 'III/c', 'III/d', 'IV/a', 'IV/b', 'IV/c', 'IV/d', 'IV/e'].forEach(g => html += `<option value="${g}">${g}</option>`); } 
+    else if (asn === 'PPPK') { ['V', 'VII', 'IX'].forEach(g => html += `<option value="${g}">${g}</option>`); }
+    selGol.innerHTML = html;
+};
+
+window.updateDataKeluarga = function() {
+    const status = document.getElementById('form-status-kawin').value;
+    const wrpAnak = document.getElementById('wrap-jumlah-anak'); const wrpKB = document.getElementById('wrap-kesertaan-kb');
+    if(status === 'Belum Kawin') { wrpAnak.style.display = 'none'; wrpKB.style.display = 'none'; }
+    else if(status === 'Janda' || status === 'Duda') { wrpAnak.style.display = 'block'; wrpKB.style.display = 'none'; }
+    else { wrpAnak.style.display = 'block'; wrpKB.style.display = 'block'; }
+};
+
+function getCheckedValues(className) {
+    let checked = []; document.querySelectorAll('.' + className + ':checked').forEach(el => checked.push(el.value)); return checked.join(', ');
+}
+
 window.simpanProfilKeServer = async function() {
     const nip = document.getElementById('form-nip').value; if(!nip) return;
     if(!confirm("Simpan perubahan data profil dan foto ini ke server pusat?")) return;
@@ -307,7 +320,6 @@ window.simpanProfilKeServer = async function() {
     let eDomDesa = document.getElementById('dom-desa'); let domDesaText = eDomDesa.options[eDomDesa.selectedIndex]?.text || '';
     let eBinKec = document.getElementById('bin-kec'); let binKecText = eBinKec.options[eBinKec.selectedIndex]?.text || '';
 
-    // Deteksi sederhana apa saja yang diupdate untuk Log Riwayat
     let infoPerubahan = "Memperbarui Data Profil Terkini";
 
     const payload = {
