@@ -34,6 +34,7 @@ function renderVisualDasbor(dataServer) {
 
     const kpi = dataServer.kpi;
     document.getElementById('kpi-total').innerText = formatAngka(kpi.total); document.getElementById('kpi-pns').innerText = formatAngka(kpi.pns);
+    document.getElementById('kpi-sudah-update').innerText = formatAngka(kpi.sudah_update);
     document.getElementById('kpi-pppk').innerText = formatAngka(kpi.pppk); document.getElementById('kpi-pria').innerText = formatAngka(kpi.pria);
     document.getElementById('kpi-wanita').innerText = formatAngka(kpi.wanita); document.getElementById('kpi-pensiun-bulan').innerText = formatAngka(kpi.pensiun_bln_ini);
     document.getElementById('kpi-pensiun-tahun').innerText = formatAngka(kpi.pensiun_thn_ini);
