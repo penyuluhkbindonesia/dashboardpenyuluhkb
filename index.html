@@ -51,6 +51,7 @@
         .card.warning { border-top: 4px solid #ffc107; }
         .card.danger { border-top: 4px solid #dc3545; }
         .card.gender { border-top: 4px solid #17a2b8; }
+        .card.success { border-top: 4px solid #28a745; } /* Khusus Profil Mutakhir */
         .card h3 { margin: 0; color: var(--text-muted); font-size: 0.8rem; font-weight: bold; }
         .card .angka { font-size: 1.8rem; font-weight: bold; color: var(--text-main); margin: 10px 0 0 0; }
 
@@ -78,13 +79,11 @@
         .portal-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; display: none; }
         @media (max-width: 768px) { .portal-layout { grid-template-columns: 1fr; } }
         
-        /* Sidebar Styling Pemulihan */
         .sidebar { background: var(--bg-card); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: fit-content; }
         .sidebar-menu { list-style: none; padding: 0; margin: 0; }
         .sidebar-menu li { padding: 12px 15px; margin-bottom: 5px; border-radius: 4px; cursor: pointer; font-weight: bold; color: var(--text-muted); transition: background-color 0.2s, color 0.2s; display: block; }
         .sidebar-menu li:hover, .sidebar-menu li.active { background: #0056b3; color: white; }
 
-        /* Grid Internal Portal */
         .dua-kolom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .empat-kolom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
         @media (max-width: 900px) { .empat-kolom-grid { grid-template-columns: 1fr 1fr; } .dua-kolom-grid { grid-template-columns: 1fr; } }
@@ -100,7 +99,7 @@
         .checkbox-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.95rem; }
         .hidden-field { display: none; margin-left: 20px; border-left: 3px solid #17a2b8; padding-left: 15px; margin-bottom: 15px; background: var(--bg-primary); padding-top: 10px; padding-bottom: 1px; border-radius: 0 4px 4px 0; }
 
-        /* CSS Khusus Materi & Peraturan (Telah Dipulihkan) */
+        /* CSS Khusus Materi & Peraturan */
         .kolom-filter { background: var(--bg-primary); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); height: fit-content; }
         .daftar-item-klik { list-style: none; padding: 0; margin: 0; }
         .daftar-item-klik li { padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; color: #0056b3; font-weight: 500; font-size: 0.95rem; }
@@ -138,14 +137,13 @@
 <div class="main-content">
     <div class="container">
         
-        <!-- ============================================== -->
-        <!-- HALAMAN DASBOR PUBLIK -->
-        <!-- ============================================== -->
         <div id="view-dasbor-publik">
             <div class="cakupan-status"><h2 id="label-cakupan">Data PKB/PLKB : NASIONAL</h2><button id="btn-reset-filter" class="btn-reset" onclick="resetFilter()">Tampilkan Nasional</button></div>
+            
             <div class="kpi-grid">
                 <div class="card"><h3>TOTAL PKB/PLKB</h3><p class="angka" id="kpi-total">0</p></div>
-                <div class="card" style="border-top: 4px solid #28a745;"><h3>PROFIL MUTAKHIR</h3><p class="angka" id="kpi-sudah-update" style="color: #28a745;">0</p></div>
+                <div class="card success"><h3>PROFIL MUTAKHIR</h3><p class="angka" id="kpi-sudah-update" style="color: #28a745;">0</p></div>
+                
                 <div class="card"><h3>PNS</h3><p class="angka" id="kpi-pns">0</p></div>
                 <div class="card"><h3>PPPK</h3><p class="angka" id="kpi-pppk">0</p></div>
                 <div class="card gender"><h3>LAKI-LAKI</h3><p class="angka" id="kpi-pria">0</p></div>
@@ -153,18 +151,17 @@
                 <div class="card warning"><h3>PENSIUN BLN INI</h3><p class="angka" id="kpi-pensiun-bulan">0</p></div>
                 <div class="card danger"><h3>PENSIUN TH 2026</h3><p class="angka" id="kpi-pensiun-tahun">0</p></div>
             </div>
+            
             <div class="chart-grid"><div class="panel"><h2>Sebaran Provinsi</h2><div class="scrollable-panel"><div class="canvas-container-tall"><canvas id="chartProvinsi"></canvas></div></div></div><div class="panel"><h2>Pendidikan Terakhir</h2><div class="canvas-container"><canvas id="chartPendidikan"></canvas></div></div></div>
             <div class="chart-grid"><div class="panel"><h2>Kelompok Umur Pegawai</h2><div class="canvas-container"><canvas id="chartUmur"></canvas></div></div><div class="panel"><h2>Demografi Generasi</h2><div class="canvas-container"><canvas id="chartGenerasi"></canvas></div></div></div>
             <div class="chart-grid"><div class="panel"><h2>Golongan Pegawai</h2><div class="canvas-container"><canvas id="chartGolongan"></canvas></div></div><div class="panel"><h2>Proporsi Jabatan</h2><div class="canvas-container"><canvas id="chartJabatan"></canvas></div></div></div>
+            
             <div class="panel">
                 <h2>Daftar Pensiun Terdekat (2026)</h2>
                 <div class="table-responsive"><table id="tabelPensiun"><thead><tr><th>Nama Lengkap</th><th>Provinsi</th><th>Jabatan</th><th>Tanggal Pensiun</th></tr></thead><tbody></tbody></table></div>
             </div>
         </div>
 
-        <!-- ============================================== -->
-        <!-- PORTAL LOGIN -->
-        <!-- ============================================== -->
         <div id="view-login" class="login-box">
             <h2>Login Portal</h2>
             <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Gunakan User dan Password untuk Masuk.</p>
@@ -181,9 +178,6 @@
         <div id="view-superadmin" style="display: none;"><div class="panel" style="border-top: 4px solid #6f42c1;"><h2>Dashboard Super Admin</h2></div></div>
         <div id="view-admin" style="display: none;"><div class="panel" style="border-top: 4px solid #fd7e14;"><h2>Dashboard Admin Regional</h2></div></div>
 
-        <!-- ============================================== -->
-        <!-- PORTAL UTAMA INTERNAL PKB -->
-        <!-- ============================================== -->
         <div id="view-portal-pkb" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu">
@@ -197,7 +191,6 @@
             </div>
 
             <div class="portal-viewport">
-                <!-- Tab: Beranda -->
                 <div id="tab-beranda" class="panel tab-content">
                     <h2 id="teks-sapaan" style="color: #0056b3; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-sambutan" style="margin-top: 0; color: var(--text-main);">Selamat Datang di Portal PenyuluhKB Indonesia</h3>
@@ -222,27 +215,66 @@
                     </div>
                 </div>
 
-                <!-- Tab: Profil -->
                 <div id="tab-profil" class="panel tab-content" style="display: none;">
+                    
                     <div id="view-profil-utama">
-                        <h2>Profil Kepegawaian Mandiri</h2>
-                        <div class="avatar-container">
-                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Foto Profil" class="avatar-img">
-                            <p id="profil-subtitle" style="color: var(--text-muted); font-size: 0.9rem; font-weight: bold; margin-top: 8px;">-</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">
+                            <h2 style="margin: 0; color: #0056b3;">Profil Kepegawaian Mandiri</h2>
+                            <span id="badge-status-update" style="background-color: #28a745; color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: none;">✓ Profil Termutakhir</span>
                         </div>
-                        <p><strong>Nama Lengkap:</strong> <span id="pkb-nama">-</span></p>
-                        <p><strong>Nomor Induk Pegawai (NIP):</strong> <span id="pkb-nip">-</span></p>
-                        <p><strong>Jabatan Fungsional:</strong> <span id="pkb-jabatan">-</span></p>
-                        <p><strong>Wilayah Kerja:</strong> <span id="pkb-wilayah">-</span></p>
-                        <button class="btn-primary" style="background-color: #007bff; margin-top: 20px;" onclick="bukaFormEditProfil()">Update Profil</button>
+                        
+                        <div class="avatar-container">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Foto Profil" class="avatar-img" id="display-foto-profil">
+                            <p id="profil-subtitle" style="color: var(--text-muted); font-size: 0.95rem; font-weight: bold; margin-top: 8px;">-</p>
+                        </div>
+                        
+                        <div class="dua-kolom-grid" style="background: var(--bg-primary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div>
+                                <p style="margin: 5px 0; color: var(--text-muted); font-size: 0.85rem;">Nama Lengkap (Sesuai KTP)</p>
+                                <p style="margin: 0 0 15px 0; font-weight: bold; font-size: 1.1rem;"><span id="pkb-nama">-</span></p>
+                                
+                                <p style="margin: 5px 0; color: var(--text-muted); font-size: 0.85rem;">Nomor Induk Pegawai (NIP)</p>
+                                <p style="margin: 0 0 15px 0; font-weight: bold;"><span id="pkb-nip">-</span></p>
+
+                                <p style="margin: 5px 0; color: var(--text-muted); font-size: 0.85rem;">Pendidikan Terakhir</p>
+                                <p style="margin: 0 0 15px 0; font-weight: bold;"><span id="pkb-pendidikan">-</span></p>
+                                
+                                <p style="margin: 5px 0; color: var(--text-muted); font-size: 0.85rem;">Status Perkawinan</p>
+                                <p style="margin: 0; font-weight: bold;"><span id="pkb-kawin">-</span></p>
+                            </div>
+                            <div>
+                                <p style="margin: 5px 0; color: var(--text-muted); font-size: 0.85rem;">Jabatan & Golongan</p>
+                                <p style="margin: 0 0 15px 0; font-weight: bold; color: #0056b3;"><span id="pkb-jabatan">-</span></p>
+                                
+                                <p style="margin: 5px 0; color: var(--text-muted); font-size: 0.85rem;">Unit Kerja / Penempatan</p>
+                                <p style="margin: 0 0 15px 0; font-weight: bold;"><span id="pkb-wilayah">-</span></p>
+
+                                <p style="margin: 5px 0; color: var(--text-muted); font-size: 0.85rem;">Kecamatan Binaan Aktif</p>
+                                <p style="margin: 0 0 15px 0; font-weight: bold; color: #fd7e14;"><span id="pkb-binaan">-</span></p>
+                                
+                                <p style="margin: 5px 0; color: var(--text-muted); font-size: 0.85rem;">Ketersediaan Balai KB</p>
+                                <p style="margin: 0; font-weight: bold;"><span id="pkb-balai">-</span></p>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" style="background-color: #007bff; margin-top: 20px; padding: 12px; font-size: 1rem;" onclick="bukaFormEditProfil()">Ubah / Update Profil</button>
                     </div>
 
-                    <!-- FORMULIR UPDATE PROFIL 4 BLOK -->
                     <div id="form-edit-profil" style="display: none;">
                         <h2 style="color: #0056b3; border-bottom: 2px solid #0056b3;">Formulir Update Profil</h2>
                         
                         <div class="form-section">
-                            <h3>1. Data Dasar</h3>
+                            <h3>1. Data Dasar & Foto</h3>
+                            
+                            <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; border: 1px dashed #adb5bd;">
+                                <img id="preview-foto-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #007bff;">
+                                <div>
+                                    <label class="form-label" style="margin-bottom: 5px;">Unggah Foto Profil Baru</label>
+                                    <input type="file" id="form-foto" accept="image/jpeg, image/png" onchange="prosesFotoUpload(event)" style="padding: 0; border: none; background: transparent;">
+                                    <p style="font-size: 0.8rem; color: #dc3545; margin: 0;">Maksimal ukuran 2MB (Akan dikompresi otomatis)</p>
+                                </div>
+                            </div>
+
                             <div class="dua-kolom-grid">
                                 <div><label class="form-label">Nama (tanpa Gelar):</label><input type="text" id="form-nama"></div>
                                 <div><label class="form-label">Nomor Induk Pegawai (NIP):</label><input type="text" id="form-nip" readonly></div>
@@ -357,13 +389,12 @@
                         </div>
 
                         <div style="display: flex; gap: 10px; margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                            <button class="btn-primary" style="background-color: #28a745; margin-top: 0; padding: 12px;" onclick="simpanProfilKeServer()">Simpan Perubahan</button>
-                            <button class="btn-primary" style="background-color: #dc3545; margin-top: 0; padding: 12px;" onclick="batalEditProfil()">Batal</button>
+                            <button id="btn-simpan-profil" class="btn-primary" style="background-color: #28a745; margin-top: 0; padding: 12px; font-size: 1.1rem;" onclick="simpanProfilKeServer()">Simpan Perubahan Data</button>
+                            <button class="btn-primary" style="background-color: #dc3545; margin-top: 0; padding: 12px; font-size: 1.1rem;" onclick="batalEditProfil()">Batal</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Tab: Informasi -->
                 <div id="tab-informasi" class="panel tab-content" style="display: none;">
                     <h2>Pusat Informasi Instansi</h2>
                     <div class="dua-kolom-grid">
@@ -378,7 +409,6 @@
                     </div>
                 </div>
 
-                <!-- Tab: Materi -->
                 <div id="tab-materi" class="panel tab-content" style="display: none;">
                     <h2>E-Learning & Materi Penyuluhan</h2>
                     <div class="dua-kolom-grid">
@@ -400,7 +430,6 @@
                     </div>
                 </div>
 
-                <!-- Tab: Peraturan -->
                 <div id="tab-peraturan" class="panel tab-content" style="display: none;">
                     <h2>Regulasi & Peraturan Kepegawaian</h2>
                     <div class="dua-kolom-grid">
@@ -421,7 +450,6 @@
                     </div>
                 </div>
 
-                <!-- Tab: Pengaturan -->
                 <div id="tab-pengaturan" class="panel tab-content" style="display: none;">
                     <h2>Pengaturan Aplikasi & Aksesibilitas</h2>
                     
