@@ -34,10 +34,13 @@ function renderVisualDasbor(dataServer) {
 
     const kpi = dataServer.kpi;
     document.getElementById('kpi-total').innerText = formatAngka(kpi.total); document.getElementById('kpi-pns').innerText = formatAngka(kpi.pns);
-    document.getElementById('kpi-sudah-update').innerText = formatAngka(kpi.sudah_update);
     document.getElementById('kpi-pppk').innerText = formatAngka(kpi.pppk); document.getElementById('kpi-pria').innerText = formatAngka(kpi.pria);
     document.getElementById('kpi-wanita').innerText = formatAngka(kpi.wanita); document.getElementById('kpi-pensiun-bulan').innerText = formatAngka(kpi.pensiun_bln_ini);
     document.getElementById('kpi-pensiun-tahun').innerText = formatAngka(kpi.pensiun_thn_ini);
+    
+    // KPI Profil Mutakhir
+    const elMutakhir = document.getElementById('kpi-sudah-update');
+    if(elMutakhir) elMutakhir.innerText = formatAngka(kpi.sudah_update || 0);
 
     let umurCount = { '< 30': 0, '30-39': 0, '40-49': 0, '50-59': 0, '60+': 0 }; let generasiCount = { 'Gen Z': 0, 'Milenial': 0, 'Gen X': 0, 'Baby Boomer': 0 };
     if (dataServer.tahun_lahir) {
@@ -102,27 +105,6 @@ function siapkanBeranda(namaLengkap) {
     if (sdhMasuk) tx.innerText = "Selamat Datang Kembali di Portal PenyuluhKB Indonesia"; else { tx.innerText = "Selamat Datang di Portal PenyuluhKB Indonesia"; localStorage.setItem('statusKunjunganPortal', 'true'); }
 }
 
-async function pulihkanSesi(data) {
-    const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
-    const wilayahKerja = (data.kabupaten || '') + ", " + data.provinsi;
-    document.getElementById('pkb-nama').innerText = data.nama_lengkap; document.getElementById('pkb-nip').innerText = data.nip;
-    document.getElementById('pkb-jabatan').innerText = gelarJabatan; document.getElementById('pkb-wilayah').innerText = wilayahKerja;
-    document.getElementById('profil-subtitle').innerText = gelarJabatan;
-
-    // Isikan data awal ke dalam Form Input
-    document.getElementById('form-nama').value = data.nama_lengkap;
-    document.getElementById('form-nip').value = data.nip;
-
-    siapkanBeranda(data.nama_lengkap);
-    document.getElementById('view-login').style.display = 'none'; document.getElementById('view-dasbor-publik').style.display = 'none';
-    const btnHeader = document.getElementById('btn-auth-action'); btnHeader.style.display = 'block'; btnHeader.innerText = "Keluar Sesi";
-    document.getElementById('header-title').innerText = `Portal: ${data.nama_lengkap}`;
-    document.getElementById('view-portal-pkb').style.display = 'grid';
-
-    const tabTerakhir = localStorage.getItem('activeTab') || 'beranda'; pindahTabPortal(tabTerakhir);
-    await inisialisasiSemuaWilayah(data);
-}
-
 window.eksekusiLogin = async function() {
     const user = document.getElementById('inputUser').value.trim(); const pass = document.getElementById('inputPass').value;
     const err = document.getElementById('pesan-error'); err.style.display = 'none';
@@ -141,6 +123,14 @@ window.eksekusiLogin = async function() {
         }
     } catch (e) { err.style.display='block'; err.innerText="Kredensial Akses Salah / Ditolak!"; }
 };
+
+function masukHalamanRole(role, namaHeader) {
+    document.getElementById('view-login').style.display = 'none'; document.getElementById('view-dasbor-publik').style.display = 'none';
+    const btn = document.getElementById('btn-auth-action'); btn.style.display = 'block'; btn.innerText = "Keluar Sesi";
+    document.getElementById('header-title').innerText = `Portal: ${namaHeader}`;
+    if (role === 'superadmin') document.getElementById('view-superadmin').style.display = 'block';
+    if (role === 'admin') document.getElementById('view-admin').style.display = 'block';
+}
 
 // ==========================================================================
 // 4. LOGIKA INTEGRASI DATABASE REFERENSI WILAYAH (SUPABASE)
@@ -196,7 +186,111 @@ window.dapatkanLokasiBalai = function() {
 };
 
 // ==========================================================================
-// 5. NAVIGASI PORTAL & INTERAKSI FORM CONDITIONAL (4 BLOK)
+// 5. PENANGANAN SESI & INJEKSI DATA KE FORMULIR
+// ==========================================================================
+let base64FotoProfilAktif = "";
+
+window.prosesFotoUpload = function(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 400; const MAX_HEIGHT = 400;
+            let width = img.width; let height = img.height;
+            if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
+            else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+            base64FotoProfilAktif = canvas.toDataURL('image/jpeg', 0.8);
+            document.getElementById('preview-foto-img').src = base64FotoProfilAktif;
+        }
+        img.src = e.target.result;
+    }
+    reader.readAsDataURL(file);
+};
+
+function setCheckboxes(className, valueString) {
+    document.querySelectorAll('.' + className).forEach(el => el.checked = false);
+    if(valueString) {
+        const values = valueString.split(',').map(v => v.trim());
+        document.querySelectorAll('.' + className).forEach(el => { if(values.includes(el.value)) el.checked = true; });
+    }
+}
+
+async function pulihkanSesi(data) {
+    // 1. UPDATE KARTU IDENTITAS VISUAL (FEEDBACK)
+    const gelarLengkap = (data.gelar_depan ? data.gelar_depan + " " : "") + data.nama_lengkap + (data.gelar_belakang ? ", " + data.gelar_belakang : "");
+    const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
+    const wilayahKerja = (data.kabupaten || '') + ", " + data.provinsi;
+    
+    document.getElementById('pkb-nama').innerText = gelarLengkap;
+    document.getElementById('pkb-nip').innerText = data.nip;
+    document.getElementById('pkb-jabatan').innerText = gelarJabatan;
+    document.getElementById('pkb-wilayah').innerText = wilayahKerja;
+    document.getElementById('profil-subtitle').innerText = gelarJabatan;
+    document.getElementById('pkb-pendidikan').innerText = (data.pendidikan_akhir || '-') + (data.jurusan_pendidikan ? ` (${data.jurusan_pendidikan})` : '');
+    document.getElementById('pkb-kawin').innerText = data.status_perkawinan || '-';
+    document.getElementById('pkb-binaan').innerText = data.kecamatan_binaan || '-';
+    document.getElementById('pkb-balai').innerText = data.memiliki_balai === 'Ya' ? (data.nama_balai || 'Ada') : 'Tidak Ada';
+
+    if (data.status_perkawinan) document.getElementById('badge-status-update').style.display = 'inline-block';
+    
+    if (data.foto_profil) {
+        document.getElementById('display-foto-profil').src = data.foto_profil;
+        document.getElementById('preview-foto-img').src = data.foto_profil;
+        base64FotoProfilAktif = data.foto_profil;
+    }
+
+    // 2. INJEKSI FORMULIR
+    document.getElementById('form-nama').value = data.nama_lengkap || '';
+    document.getElementById('form-nip').value = data.nip || '';
+    document.getElementById('form-gelar-depan').value = data.gelar_depan || '';
+    document.getElementById('form-gelar-belakang').value = data.gelar_belakang || '';
+    document.getElementById('form-tanggal-lahir').value = data.tanggal_lahir || '';
+    if(data.jenis_kelamin) document.getElementById('form-jenis-kelamin').value = data.jenis_kelamin;
+    if(data.jenis_pegawai) { document.getElementById('form-jenis-asn').value = data.jenis_pegawai; updateGolonganRuang(); }
+    if(data.tahun_diangkat) document.getElementById('form-tahun-diangkat').value = data.tahun_diangkat;
+    if(data.jabatan) document.getElementById('form-jabatan').value = data.jabatan;
+    if(data.golongan) document.getElementById('form-golongan').value = data.golongan;
+    if(data.pendidikan_akhir) document.getElementById('form-pendidikan').value = data.pendidikan_akhir;
+    document.getElementById('form-jurusan').value = data.jurusan_pendidikan || '';
+
+    if(data.status_perkawinan) { document.getElementById('form-status-kawin').value = data.status_perkawinan; updateDataKeluarga(); }
+    if(data.jumlah_anak) document.getElementById('form-jumlah-anak').value = data.jumlah_anak;
+    if(data.kesertaan_kb) document.getElementById('form-kesertaan-kb').value = data.kesertaan_kb;
+    if(data.tinggal_bersama_keluarga) document.getElementById('form-tinggal-keluarga').value = data.tinggal_bersama_keluarga;
+
+    if(data.memiliki_balai) { document.getElementById('sarpras-balai').value = data.memiliki_balai; document.getElementById('sarpras-balai').dispatchEvent(new Event('change')); }
+    document.getElementById('form-nama-balai').value = data.nama_balai || '';
+    document.getElementById('lokasi-balai').value = data.lokasi_balai_gps || '';
+
+    if(data.kendaraan_dinas) { document.getElementById('sarpras-kendaraan').value = data.kendaraan_dinas; document.getElementById('sarpras-kendaraan').dispatchEvent(new Event('change')); }
+    if(data.tahun_kendaraan) document.getElementById('form-tahun-kendaraan').value = data.tahun_kendaraan;
+    if(data.transmisi_kendaraan) document.getElementById('form-transmisi-kendaraan').value = data.transmisi_kendaraan;
+    if(data.kondisi_kendaraan) document.getElementById('form-kondisi-kendaraan').value = data.kondisi_kendaraan;
+
+    if(data.biaya_bbm) { document.getElementById('sarpras-bbm').value = data.biaya_bbm; document.getElementById('sarpras-bbm').dispatchEvent(new Event('change')); }
+    setCheckboxes('chk-bbm', data.sumber_dana_bbm);
+
+    if(data.biaya_perawatan) { document.getElementById('sarpras-perawatan').value = data.biaya_perawatan; document.getElementById('sarpras-perawatan').dispatchEvent(new Event('change')); }
+    setCheckboxes('chk-rawat', data.sumber_dana_perawatan);
+
+    setCheckboxes('chk-lain', data.sarpras_lainnya);
+    
+    siapkanBeranda(data.nama_lengkap);
+    document.getElementById('view-login').style.display = 'none'; document.getElementById('view-dasbor-publik').style.display = 'none';
+    const btnHeader = document.getElementById('btn-auth-action'); btnHeader.style.display = 'block'; btnHeader.innerText = "Keluar Sesi";
+    document.getElementById('header-title').innerText = `Portal: ${data.nama_lengkap}`;
+    document.getElementById('view-portal-pkb').style.display = 'grid';
+
+    const tabTerakhir = localStorage.getItem('activeTab') || 'beranda'; pindahTabPortal(tabTerakhir);
+    await inisialisasiSemuaWilayah(data);
+}
+
+// ==========================================================================
+// 6. ENGINE UTAMA: EDIT PROFIL & UI INTERACTION
 // ==========================================================================
 window.pindahTabPortal = function(tabId) {
     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
@@ -205,7 +299,6 @@ window.pindahTabPortal = function(tabId) {
     const activeLink = document.querySelector(`.tab-link[onclick="pindahTabPortal('${tabId}')"]`); if(activeLink) activeLink.classList.add('active');
     localStorage.setItem('activeTab', tabId);
 };
-
 window.bukaFormEditProfil = function() { document.getElementById('view-profil-utama').style.display = 'none'; document.getElementById('form-edit-profil').style.display = 'block'; };
 window.batalEditProfil = function() { document.getElementById('form-edit-profil').style.display = 'none'; document.getElementById('view-profil-utama').style.display = 'block'; };
 
@@ -237,29 +330,18 @@ window.updateDataKeluarga = function() {
     else { wrpAnak.style.display = 'block'; wrpKB.style.display = 'block'; }
 };
 
-// Helper untuk mengekstrak teks teks dari kumpulan elemen yang di-centang (Checkbox)
 function getCheckedValues(className) {
-    let checked = [];
-    document.querySelectorAll('.' + className + ':checked').forEach(el => checked.push(el.value));
-    return checked.join(', ');
+    let checked = []; document.querySelectorAll('.' + className + ':checked').forEach(el => checked.push(el.value)); return checked.join(', ');
 }
 
-// ==========================================================================
-// 6. ENGINE UTAMA: ENGINE EDIT PROFIL SECARA LANGSUNG KILAT (DIRECT UPDATE)
-// ==========================================================================
 window.simpanProfilKeServer = async function() {
-    const nip = document.getElementById('form-nip').value;
-    if(!nip) return;
+    const nip = document.getElementById('form-nip').value; if(!nip) return;
+    if(!confirm("Apakah Anda yakin ingin menyimpan perubahan data profil dan foto ini ke server pusat?")) return;
 
-    // Konfirmasi Visual awal
-    if(!confirm("Apakah Anda yakin ingin menyimpan perubahan data profil ini secara langsung ke server?")) return;
+    const btnSimpan = document.getElementById('btn-simpan-profil'); btnSimpan.innerText = "Menyimpan Data..."; btnSimpan.disabled = true;
 
-    // Ambil data teks terpilih dari desa binaan (bisa multi pilihan)
-    let listDesaBinaan = [];
-    document.querySelectorAll('.chk-binaan-desa:checked').forEach(el => listDesaBinaan.push(el.value));
-    let stringDesaBinaan = listDesaBinaan.join(', ');
-
-    // Ambil dropdown text provinsi/kabupaten lahir & domisili
+    let listDesaBinaan = []; document.querySelectorAll('.chk-binaan-desa:checked').forEach(el => listDesaBinaan.push(el.value));
+    
     let eTLProv = document.getElementById('tl-provinsi'); let tlProvText = eTLProv.options[eTLProv.selectedIndex]?.text || '';
     let eTLKab = document.getElementById('tl-kabupaten'); let tlKabText = eTLKab.options[eTLKab.selectedIndex]?.text || '';
     let eDomProv = document.getElementById('dom-prov'); let domProvText = eDomProv.options[eDomProv.selectedIndex]?.text || '';
@@ -268,63 +350,28 @@ window.simpanProfilKeServer = async function() {
     let eDomDesa = document.getElementById('dom-desa'); let domDesaText = eDomDesa.options[eDomDesa.selectedIndex]?.text || '';
     let eBinKec = document.getElementById('bin-kec'); let binKecText = eBinKec.options[eBinKec.selectedIndex]?.text || '';
 
-    // Siapkan bungkusan raksasa parameter untuk ditembakkan ke RPC Supabase
     const payload = {
-        p_nip: nip,
-        p_nama: document.getElementById('form-nama').value.trim(),
-        p_gelar_dp: document.getElementById('form-gelar-depan').value.trim(),
-        p_gelar_bk: document.getElementById('form-gelar-belakang').value.trim(),
-        p_tl_prov: tlProvText.replace('-- Pilih Provinsi --', ''),
-        p_tl_kab: tlKabText.replace('-- Pilih Kab/Kota --', ''),
-        p_tgl_lahir: document.getElementById('form-tanggal-lahir').value,
-        p_jk: document.getElementById('form-jenis-kelamin').value,
-        p_asn: document.getElementById('form-jenis-asn').value,
-        p_thn_angkat: document.getElementById('form-tahun-diangkat').value,
-        p_jabatan: document.getElementById('form-jabatan').value,
-        p_golongan: document.getElementById('form-golongan').value,
-        p_pendidikan: document.getElementById('form-pendidikan').value,
-        p_jurusan: document.getElementById('form-jurusan').value.trim(),
-        p_status_kawin: document.getElementById('form-status-kawin').value,
-        p_jml_anak: document.getElementById('form-jumlah-anak').value,
-        p_kb: document.getElementById('form-kesertaan-kb').value,
-        p_tinggal_kel: document.getElementById('form-tinggal-keluarga').value,
-        p_dom_prov: domProvText.replace('-- Provinsi --', ''),
-        p_dom_kab: domKabText.replace('-- Kab/Kota --', ''),
-        p_dom_kec: domKecText.replace('-- Kecamatan --', ''),
-        p_dom_desa: domDesaText.replace('-- Desa/Kel --', ''),
-        p_bin_kec: binKecText.replace('-- Pilih Kecamatan --', ''),
-        p_bin_desa: stringDesaBinaan,
-        p_miliki_balai: document.getElementById('sarpras-balai').value,
-        p_nama_balai: document.getElementById('form-nama-balai').value.trim(),
-        p_gps_balai: document.getElementById('lokasi-balai').value,
-        p_kendaraan: document.getElementById('sarpras-kendaraan').value,
-        p_thn_kendaraan: document.getElementById('form-tahun-kendaraan').value,
-        p_transmisi: document.getElementById('form-transmisi-kendaraan').value,
-        p_kondisi: document.getElementById('form-kondisi-kendaraan').value,
-        p_bbm: document.getElementById('sarpras-bbm').value,
-        p_dana_bbm: getCheckedValues('chk-bbm'),
-        p_rawat: document.getElementById('sarpras-perawatan').value,
-        p_dana_rawat: getCheckedValues('chk-rawat'),
-        p_sarpras_lain: getCheckedValues('chk-lain') + (document.getElementById('cek-lainnya').checked ? `, ${document.getElementById('form-sarpras-lainnya-sebutkan').value.trim()}` : '')
+        p_nip: nip, p_nama: document.getElementById('form-nama').value.trim(), p_gelar_dp: document.getElementById('form-gelar-depan').value.trim(), p_gelar_bk: document.getElementById('form-gelar-belakang').value.trim(),
+        p_tl_prov: tlProvText.replace('-- Pilih Provinsi --', ''), p_tl_kab: tlKabText.replace('-- Pilih Kab/Kota --', ''), p_tgl_lahir: document.getElementById('form-tanggal-lahir').value,
+        p_jk: document.getElementById('form-jenis-kelamin').value, p_asn: document.getElementById('form-jenis-asn').value, p_thn_angkat: document.getElementById('form-tahun-diangkat').value,
+        p_jabatan: document.getElementById('form-jabatan').value, p_golongan: document.getElementById('form-golongan').value, p_pendidikan: document.getElementById('form-pendidikan').value, p_jurusan: document.getElementById('form-jurusan').value.trim(),
+        p_status_kawin: document.getElementById('form-status-kawin').value, p_jml_anak: document.getElementById('form-jumlah-anak').value, p_kb: document.getElementById('form-kesertaan-kb').value, p_tinggal_kel: document.getElementById('form-tinggal-keluarga').value,
+        p_dom_prov: domProvText.replace('-- Provinsi --', ''), p_dom_kab: domKabText.replace('-- Kab/Kota --', ''), p_dom_kec: domKecText.replace('-- Kecamatan --', ''), p_dom_desa: domDesaText.replace('-- Desa/Kel --', ''),
+        p_bin_kec: binKecText.replace('-- Pilih Kecamatan --', ''), p_bin_desa: listDesaBinaan.join(', '),
+        p_miliki_balai: document.getElementById('sarpras-balai').value, p_nama_balai: document.getElementById('form-nama-balai').value.trim(), p_gps_balai: document.getElementById('lokasi-balai').value,
+        p_kendaraan: document.getElementById('sarpras-kendaraan').value, p_thn_kendaraan: document.getElementById('form-tahun-kendaraan').value, p_transmisi: document.getElementById('form-transmisi-kendaraan').value, p_kondisi: document.getElementById('form-kondisi-kendaraan').value,
+        p_bbm: document.getElementById('sarpras-bbm').value, p_dana_bbm: getCheckedValues('chk-bbm'), p_rawat: document.getElementById('sarpras-perawatan').value, p_dana_rawat: getCheckedValues('chk-rawat'),
+        p_sarpras_lain: getCheckedValues('chk-lain') + (document.getElementById('cek-lainnya').checked ? `, ${document.getElementById('form-sarpras-lainnya-sebutkan').value.trim()}` : ''),
+        p_foto: base64FotoProfilAktif 
     };
 
     try {
-        // Tembak langsung ke server utama
         const { data, error } = await mySupabase.rpc('simpan_update_profil', payload);
         if(error) throw error;
-
-        alert("Selamat! Pembaruan profil Anda telah berhasil disimpan dan langsung diterapkan di pangkalan data nasional.");
-        
-        // Perbarui Memori Sesi Browser (LocalStorage) seketika
-        localStorage.setItem('sesi_portal_pkb', JSON.stringify(data));
-        
-        // Render ulang tampilan layar detik ini juga
-        pulihkanSesi(data);
-        batalEditProfil();
-    } catch(err) {
-        console.error(err);
-        alert("Gagal melakukan pembaruan profil langsung. Sila periksa kembali jaringan koneksi Anda.");
-    }
+        localStorage.setItem('sesi_portal_pkb', JSON.stringify(data)); pulihkanSesi(data); batalEditProfil(); 
+        alert("Pembaruan profil Anda telah berhasil disimpan.");
+    } catch(err) { console.error(err); alert("Gagal melakukan pembaruan profil. Periksa koneksi Anda."); } 
+    finally { btnSimpan.innerText = "Simpan Perubahan Data"; btnSimpan.disabled = false; }
 };
 
 window.kirimSaranPengguna = async function() {
