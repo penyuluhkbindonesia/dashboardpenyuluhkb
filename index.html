@@ -92,7 +92,6 @@
 <div class="main-content">
     <div class="container">
         
-        <!-- DASHBOARD PUBLIK -->
         <div id="view-dasbor-publik">
             <div class="cakupan-status"><h2 id="label-cakupan">Data PKB/PLKB : NASIONAL</h2><button id="btn-reset-filter" class="btn-reset" onclick="resetFilter()">Tampilkan Nasional</button></div>
             <div class="kpi-grid">
@@ -114,7 +113,6 @@
             </div>
         </div>
 
-        <!-- PORTAL LOGIN -->
         <div id="view-login" class="login-box">
             <h2>Login Portal</h2>
             <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Gunakan User dan Password untuk Masuk.</p>
@@ -128,7 +126,6 @@
             <p id="pesan-error" style="color: red; display: none; text-align: center; font-size: 0.9rem; margin-top: 15px;"></p>
         </div>
 
-        <!-- PORTAL UTAMA INTERNAL PKB -->
         <div id="view-portal-pkb" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu">
@@ -142,7 +139,6 @@
             </div>
 
             <div class="portal-viewport">
-                <!-- Tab: Beranda -->
                 <div id="tab-beranda" class="panel tab-content">
                     <h2 id="teks-sapaan" style="color: #0056b3; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-sambutan" style="margin-top: 0; color: var(--text-main);">Selamat Datang di Portal PenyuluhKB Indonesia</h3>
@@ -153,10 +149,8 @@
                     </div>
                 </div>
 
-                <!-- Tab: Profil -->
                 <div id="tab-profil" class="panel tab-content" style="display: none;">
                     
-                    <!-- KARTU IDENTITAS LENGKAP -->
                     <div id="view-profil-utama">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">
                             <div>
@@ -206,7 +200,6 @@
                         <button class="btn-primary" style="background-color: #007bff; padding: 12px; font-size: 1rem;" onclick="bukaFormEditProfil()">Ubah / Update Profil</button>
                     </div>
 
-                    <!-- FORMULIR UPDATE PROFIL 4 BLOK -->
                     <div id="form-edit-profil" style="display: none;">
                         <h2 style="color: #0056b3; border-bottom: 2px solid #0056b3;">Formulir Update Profil</h2>
                         
@@ -286,6 +279,7 @@
 
                             <label class="form-label" style="margin-top:15px;">2. Menggunakan Kendaraan Dinas?</label>
                             <select id="sarpras-kendaraan"><option value="Tidak">Tidak</option><option value="Ya">Ya</option></select>
+                            
                             <div id="sub-kendaraan" class="hidden-field">
                                 <div class="dua-kolom-grid">
                                     <div><label class="form-label">Tahun Kendaraan:</label><select id="form-tahun-kendaraan"></select></div>
@@ -323,7 +317,6 @@
                     </div>
                 </div>
 
-                <!-- Tab: Informasi -->
                 <div id="tab-informasi" class="panel tab-content" style="display: none;">
                     <h2>Pusat Informasi Instansi</h2>
                     <div class="dua-kolom-grid">
@@ -332,11 +325,12 @@
                             <p style="color: var(--text-main);">Diberitahukan kepada seluruh tenaga lini lapangan Penyuluh KB and PLKB di seluruh Indonesia untuk segera melakukan verifikasi kevalidan data pada sistem utama.</p>
                             <p style="color: var(--text-muted); font-size: 0.95rem;">Proses integrasi ini ditargetkan rampung pada akhir bulan Juni 2026 guna mendukung akurasi kebijakan kepegawaian nasional.</p>
                         </div>
-                        <div><img src="https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=500&q=80" alt="Gambar Info" style="width:100%; border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"></div>
+                        <div>
+                            <img src="https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=500&q=80" alt="Gambar Info" style="width:100%; border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                        </div>
                     </div>
                 </div>
 
-                <!-- Tab: Materi -->
                 <div id="tab-materi" class="panel tab-content" style="display: none;">
                     <h2>E-Learning & Materi Penyuluhan</h2>
                     <div class="dua-kolom-grid">
@@ -355,7 +349,6 @@
                     </div>
                 </div>
 
-                <!-- Tab: Peraturan -->
                 <div id="tab-peraturan" class="panel tab-content" style="display: none;">
                     <h2>Regulasi Kepegawaian</h2>
                     <div class="dua-kolom-grid">
@@ -372,7 +365,6 @@
                     </div>
                 </div>
 
-                <!-- Tab: Pengaturan -->
                 <div id="tab-pengaturan" class="panel tab-content" style="display: none;">
                     <h2>Pengaturan Aplikasi & Aksesibilitas</h2>
                     <h3 style="color: #0056b3;">Akses Keamanan</h3>
@@ -395,7 +387,6 @@
     </div>
 </div>
 
-<!-- Modal Log Pembaruan -->
 <div id="modal-log" class="modal-overlay" onclick="tutupModalLog(event)">
     <div class="modal-card">
         <h3 style="margin-top: 0; color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 10px;">Riwayat Pembaruan Profil</h3>
@@ -406,6 +397,8 @@
     </div>
 </div>
 
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/chart.js@4"></script>
 <script src="app.js"></script>
 </body>
 </html>
