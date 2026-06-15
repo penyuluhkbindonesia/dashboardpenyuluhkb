@@ -1,16 +1,17 @@
 {
-  "name": "Dashboard PKB/PLKB",
-  "short_name": "Portal PKB",
-  "description": "Portal Data Pegawai PKB dan PLKB",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#f4f7f6",
-  "theme_color": "#007bff",
+  "short_name": "PenyuluhKB",
+  "name": "Portal PenyuluhKB Indonesia",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+      "src": "dashboardpkb.webp",
+      "type": "image/webp",
       "sizes": "512x512",
-      "type": "image/png"
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "start_url": "index.html",
+  "background_color": "#0056b3",
+  "theme_color": "#0056b3",
+  "display": "standalone",
+  "orientation": "portrait"
 }
