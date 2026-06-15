@@ -5,9 +5,15 @@ const SUPABASE_URL = 'https://cdnqqrjbdhoglvlqbxoq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbnFxcmpiZGhvZ2x2bHFieG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDQ1NDIsImV4cCI6MjA5NjU4MDU0Mn0.dHQbkEIJe5L4bfyJqZkJkXTPX0Abot4GBw7_4O3eNwk';
 const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// KOORDINAT PENYIMPANAN FOTO GRATIS (CLOUDINARY)
+const CLOUDINARY_CLOUD_NAME = 'dfkvczk8b';
+const CLOUDINARY_UPLOAD_PRESET = 'givyqypl'; 
+
 let filterProvinsiAktif = null; let currentZoomLevel = 100; 
 let chartProvInstance = null; let chartUmurInstance = null; let chartJabatanInstance = null;
 let chartGenerasiInstance = null; let chartPendidikanInstance = null; let chartGolonganInstance = null;
+
+let fotoProfilBaruDipilih = false; // Flag pelacak foto baru
 
 function formatAngka(angka) { return Number(angka).toLocaleString('id-ID'); }
 function formatTanggalIndo(tglStr) {
@@ -15,8 +21,7 @@ function formatTanggalIndo(tglStr) {
     if (b.length !== 3) return tglStr; return `${b[2]}-${b[1]}-${b[0]}`;
 }
 function formatWaktuIndo(isoString) {
-    if(!isoString) return '-';
-    const d = new Date(isoString);
+    if(!isoString) return '-'; const d = new Date(isoString);
     return d.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
 
@@ -108,8 +113,7 @@ function siapkanBeranda(namaLengkap) {
 
 window.eksekusiLogin = async function() {
     const uIn = document.getElementById('inputUser'); const pIn = document.getElementById('inputPass'); const err = document.getElementById('pesan-error');
-    if(!uIn || !pIn || !err) return;
-    const user = uIn.value.trim(); const pass = pIn.value;
+    if(!uIn || !pIn || !err) return; const user = uIn.value.trim(); const pass = pIn.value;
     err.style.display = 'none'; if (!user || !pass) return;
     try {
         const { data, error } = await mySupabase.rpc('otentikasi_pegawai', { p_nip: user });
@@ -169,6 +173,7 @@ window.prosesFotoUpload = function(event) {
             canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height);
             base64FotoProfilAktif = canvas.toDataURL('image/jpeg', 0.8); 
             const prev = document.getElementById('preview-foto-img'); if(prev) prev.src = base64FotoProfilAktif;
+            fotoProfilBaruDipilih = true; // Tandai foto baru dipilih
         }; img.src = e.target.result;
     }; reader.readAsDataURL(file);
 };
@@ -183,16 +188,11 @@ async function pulihkanSesi(data) {
     const gelarLengkap = (data.gelar_depan ? data.gelar_depan + " " : "") + data.nama_lengkap + (data.gelar_belakang ? ", " + data.gelar_belakang : "");
     const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
     
-    setTxt('pkb-nama', gelarLengkap);
-    setTxt('pkb-nip', data.nip);
-    setTxt('pkb-jabatan', gelarJabatan);
-    setTxt('pkb-wilayah', (data.kabupaten || '') + ", " + data.provinsi);
-    setTxt('profil-subtitle', gelarJabatan);
+    setTxt('pkb-nama', gelarLengkap); setTxt('pkb-nip', data.nip); setTxt('pkb-jabatan', gelarJabatan);
+    setTxt('pkb-wilayah', (data.kabupaten || '') + ", " + data.provinsi); setTxt('profil-subtitle', gelarJabatan);
     setTxt('pkb-pendidikan', (data.pendidikan_akhir || '-') + (data.jurusan_pendidikan ? ` (${data.jurusan_pendidikan})` : ''));
-    setTxt('pkb-kawin', data.status_perkawinan || '-');
-    setTxt('pkb-binaan', data.kecamatan_binaan || '-');
-    setTxt('pkb-balai', data.memiliki_balai === 'Ya' ? (data.nama_balai || 'Ada') : 'Tidak Ada');
-    setTxt('pkb-jarak', data.jarak_binaan ? data.jarak_binaan + ' KM' : '-');
+    setTxt('pkb-kawin', data.status_perkawinan || '-'); setTxt('pkb-binaan', data.kecamatan_binaan || '-');
+    setTxt('pkb-balai', data.memiliki_balai === 'Ya' ? (data.nama_balai || 'Ada') : 'Tidak Ada'); setTxt('pkb-jarak', data.jarak_binaan ? data.jarak_binaan + ' KM' : '-');
 
     if(data.tanggal_lahir) setTxt('pkb-usia', (2026 - parseInt(data.tanggal_lahir.split('-')[0])));
     if(data.tahun_diangkat) setTxt('pkb-masa-kerja', (2026 - parseInt(data.tahun_diangkat)));
@@ -218,33 +218,27 @@ async function pulihkanSesi(data) {
         const pFoto = document.getElementById('preview-foto-img'); if(pFoto) pFoto.src = data.foto_profil;
         base64FotoProfilAktif = data.foto_profil;
     }
+    fotoProfilBaruDipilih = false; // Reset status pelacak
 
     // 2. INJEKSI FORMULIR MENGGUNAKAN HELPER ANTI-CRASH
-    setVal('form-nama', data.nama_lengkap || '');
-    setVal('form-nip', data.nip || '');
-    setVal('form-gelar-depan', data.gelar_depan || '');
-    setVal('form-gelar-belakang', data.gelar_belakang || '');
+    setVal('form-nama', data.nama_lengkap || ''); setVal('form-nip', data.nip || '');
+    setVal('form-gelar-depan', data.gelar_depan || ''); setVal('form-gelar-belakang', data.gelar_belakang || '');
     setVal('form-tanggal-lahir', data.tanggal_lahir || '');
     if(data.jenis_kelamin) setVal('form-jenis-kelamin', data.jenis_kelamin);
     if(data.jenis_pegawai) { setVal('form-jenis-asn', data.jenis_pegawai); updateGolonganRuang(); }
     if(data.tahun_diangkat) setVal('form-tahun-diangkat', data.tahun_diangkat);
-    if(data.jabatan) setVal('form-jabatan', data.jabatan);
-    if(data.golongan) setVal('form-golongan', data.golongan);
-    if(data.pendidikan_akhir) setVal('form-pendidikan', data.pendidikan_akhir);
-    setVal('form-jurusan', data.jurusan_pendidikan || '');
+    if(data.jabatan) setVal('form-jabatan', data.jabatan); if(data.golongan) setVal('form-golongan', data.golongan);
+    if(data.pendidikan_akhir) setVal('form-pendidikan', data.pendidikan_akhir); setVal('form-jurusan', data.jurusan_pendidikan || '');
 
     if(data.status_perkawinan) { setVal('form-status-kawin', data.status_perkawinan); updateDataKeluarga(); }
-    if(data.jumlah_anak) setVal('form-jumlah-anak', data.jumlah_anak);
-    if(data.kesertaan_kb) setVal('form-kesertaan-kb', data.kesertaan_kb);
+    if(data.jumlah_anak) setVal('form-jumlah-anak', data.jumlah_anak); if(data.kesertaan_kb) setVal('form-kesertaan-kb', data.kesertaan_kb);
     if(data.tinggal_bersama_keluarga) setVal('form-tinggal-keluarga', data.tinggal_bersama_keluarga);
 
     if(data.memiliki_balai) { setVal('sarpras-balai', data.memiliki_balai); const sb = document.getElementById('sarpras-balai'); if(sb) sb.dispatchEvent(new Event('change')); }
-    setVal('form-nama-balai', data.nama_balai || '');
-    setVal('lokasi-balai', data.lokasi_balai_gps || '');
+    setVal('form-nama-balai', data.nama_balai || ''); setVal('lokasi-balai', data.lokasi_balai_gps || '');
 
     if(data.kendaraan_dinas) { setVal('sarpras-kendaraan', data.kendaraan_dinas); const sk = document.getElementById('sarpras-kendaraan'); if(sk) sk.dispatchEvent(new Event('change')); }
-    if(data.tahun_kendaraan) setVal('form-tahun-kendaraan', data.tahun_kendaraan);
-    if(data.transmisi_kendaraan) setVal('form-transmisi-kendaraan', data.transmisi_kendaraan);
+    if(data.tahun_kendaraan) setVal('form-tahun-kendaraan', data.tahun_kendaraan); if(data.transmisi_kendaraan) setVal('form-transmisi-kendaraan', data.transmisi_kendaraan);
     if(data.kondisi_kendaraan) setVal('form-kondisi-kendaraan', data.kondisi_kendaraan);
 
     if(data.biaya_bbm) { setVal('sarpras-bbm', data.biaya_bbm); const sm = document.getElementById('sarpras-bbm'); if(sm) sm.dispatchEvent(new Event('change')); }
@@ -254,15 +248,13 @@ async function pulihkanSesi(data) {
     
     const stdSarpras = ['Laptop', 'HP', 'Tablet', 'Pakaian Seragam Dinas', 'PKB/PLKB Kit'];
     let customSarpras = []; document.querySelectorAll('.chk-lain').forEach(el => el.checked = false); 
-    const cl = document.getElementById('cek-lainnya'); if(cl) cl.checked = false; 
-    setVal('form-sarpras-lainnya-sebutkan', ''); 
+    const cl = document.getElementById('cek-lainnya'); if(cl) cl.checked = false; setVal('form-sarpras-lainnya-sebutkan', ''); 
     const sl = document.getElementById('sub-lainnya'); if(sl) sl.style.display = 'none';
 
     if(data.sarpras_lainnya) {
         data.sarpras_lainnya.split(',').forEach(item => { const trimItem = item.trim(); if(stdSarpras.includes(trimItem)) { const chk = document.querySelector(`.chk-lain[value="${trimItem}"]`); if(chk) chk.checked = true; } else if(trimItem) customSarpras.push(trimItem); });
         if(customSarpras.length > 0) { if(cl) cl.checked = true; if(sl) sl.style.display = 'block'; setVal('form-sarpras-lainnya-sebutkan', customSarpras.join(', ')); }
     }
-    
     if(data.jarak_binaan) setVal('form-jarak', data.jarak_binaan);
 
     siapkanBeranda(data.nama_lengkap);
@@ -294,10 +286,7 @@ async function pulihkanSesi(data) {
                 if(kData && kData.length>0) { binKabSelect.innerHTML = `<option value="${kData[0].kode}" selected>${kData[0].nama}</option>`;
                     await fetchWilayah('Kecamatan', kData[0].kode, 'bin-kec', '-- Pilih Kecamatan --');
                     const kdBinKec = await setSelectByText('bin-kec', data.kecamatan_binaan);
-                    if(kdBinKec) {
-                        await popBinDesa();
-                        if(data.desa_binaan) { const desaTersimpan = data.desa_binaan.split(',').map(v=>v.trim()); document.querySelectorAll('.chk-binaan-desa').forEach(el => { if(desaTersimpan.includes(el.value)) el.checked = true; }); }
-                    }
+                    if(kdBinKec) { await popBinDesa(); if(data.desa_binaan) { const desaTersimpan = data.desa_binaan.split(',').map(v=>v.trim()); document.querySelectorAll('.chk-binaan-desa').forEach(el => { if(desaTersimpan.includes(el.value)) el.checked = true; }); } }
                 }
             }
         }
@@ -306,11 +295,11 @@ async function pulihkanSesi(data) {
 }
 
 // ==========================================================================
-// 6. ENGINE SIMPAN PROFIL & LOGIKA FORM
+// 6. ENGINE UTAMA SIMPAN PROFIL & INJEKSI SILUMAN CLOUDINARY (DIFF DETECTOR)
 // ==========================================================================
 window.pindahTabPortal = function(tabId) { document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active')); const target = document.getElementById(`tab-${tabId}`); if(target) target.style.display = 'block'; const activeLink = document.querySelector(`.tab-link[onclick="pindahTabPortal('${tabId}')"]`); if(activeLink) activeLink.classList.add('active'); localStorage.setItem('activeTab', tabId); };
 window.bukaFormEditProfil = function() { const vpu = document.getElementById('view-profil-utama'); if(vpu) vpu.style.display = 'none'; const fep = document.getElementById('form-edit-profil'); if(fep) fep.style.display = 'block'; };
-window.batalEditProfil = function() { const fep = document.getElementById('form-edit-profil'); if(fep) fep.style.display = 'none'; const vpu = document.getElementById('view-profil-utama'); if(vpu) vpu.style.display = 'block'; };
+window.batalEditProfil = function() { document.getElementById('form-edit-profil').style.display = 'none'; document.getElementById('view-profil-utama').style.display = 'block'; };
 window.bukaModalLog = function() { const ml = document.getElementById('modal-log'); if(ml) ml.style.display = 'flex'; };
 window.tutupModalLog = function(e) { const ml = document.getElementById('modal-log'); if(ml && e.target === ml) ml.style.display = 'none'; };
 
@@ -336,24 +325,18 @@ window.updateGolonganRuang = function() {
 
 window.updateDataKeluarga = function() {
     const fsk = document.getElementById('form-status-kawin'); const wrpAnak = document.getElementById('wrap-jumlah-anak'); const wrpKB = document.getElementById('wrap-kesertaan-kb');
-    if(!fsk || !wrpAnak || !wrpKB) return;
-    const status = fsk.value;
+    if(!fsk || !wrpAnak || !wrpKB) return; const status = fsk.value;
     if(status === 'Belum Kawin') { wrpAnak.style.display = 'none'; wrpKB.style.display = 'none'; }
     else if(status === 'Janda' || status === 'Duda') { wrpAnak.style.display = 'block'; wrpKB.style.display = 'none'; }
     else { wrpAnak.style.display = 'block'; wrpKB.style.display = 'block'; }
 };
 
-function getCheckedValues(className) {
-    let checked = []; document.querySelectorAll('.' + className + ':checked').forEach(el => checked.push(el.value)); return checked.join(', ');
-}
-
 window.simpanProfilKeServer = async function() {
     const fnip = document.getElementById('form-nip'); if(!fnip || !fnip.value) return; const nip = fnip.value;
     if(!confirm("Simpan perubahan data profil dan foto ini ke server pusat?")) return;
-    const btnSimpan = document.getElementById('btn-simpan-profil'); if(btnSimpan) { btnSimpan.innerText = "Menyimpan Data..."; btnSimpan.disabled = true; }
+    const btnSimpan = document.getElementById('btn-simpan-profil'); if(btnSimpan) { btnSimpan.innerText = "Memproses Data..."; btnSimpan.disabled = true; }
 
     let listDesaBinaan = []; document.querySelectorAll('.chk-binaan-desa:checked').forEach(el => listDesaBinaan.push(el.value));
-    
     let eTLProv = document.getElementById('tl-provinsi'); let tlProvText = eTLProv && eTLProv.selectedIndex >= 0 ? eTLProv.options[eTLProv.selectedIndex].text : '';
     let eTLKab = document.getElementById('tl-kabupaten'); let tlKabText = eTLKab && eTLKab.selectedIndex >= 0 ? eTLKab.options[eTLKab.selectedIndex].text : '';
     let eDomProv = document.getElementById('dom-prov'); let domProvText = eDomProv && eDomProv.selectedIndex >= 0 ? eDomProv.options[eDomProv.selectedIndex].text : '';
@@ -365,9 +348,32 @@ window.simpanProfilKeServer = async function() {
     const getName = (id) => document.getElementById(id) ? document.getElementById(id).value.trim() : '';
     const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : '';
 
+    let urlFotoFinal = base64FotoProfilAktif;
+
+    // === INTERSEPSI SILUMAN: UPLOAD KE CLOUDINARY JIKA ADA FOTO BARU ===
+    if (fotoProfilBaruDipilih && base64FotoProfilAktif.startsWith('data:image')) {
+        try {
+            if(btnSimpan) btnSimpan.innerText = "Mengunggah Foto Profil...";
+            const formData = new FormData();
+            formData.append('file', base64FotoProfilAktif);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            
+            const resCloud = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                method: 'POST', body: formData
+            });
+            const cloudData = await resCloud.json();
+            if (cloudData.secure_url) { urlFotoFinal = cloudData.secure_url; } 
+            else { throw new Error("Gagal cloud"); }
+        } catch (err) {
+            alert("Gagal memproses foto ke server awan rahasia. Menggunakan foto lama/kosong.");
+            const oldSesi = localStorage.getItem('sesi_portal_pkb');
+            urlFotoFinal = oldSesi ? JSON.parse(oldSesi).foto_profil || "" : "";
+        }
+    }
+
     let infoPerubahan = "Memperbarui Data Profil Terkini";
     const oldSesiStr = localStorage.getItem('sesi_portal_pkb');
-    
+
     const payload = {
         p_nip: nip, p_nama: getName('form-nama'), p_gelar_dp: getName('form-gelar-depan'), p_gelar_bk: getName('form-gelar-belakang'),
         p_tl_prov: tlProvText.replace('-- Pilih Provinsi --', ''), p_tl_kab: tlKabText.replace('-- Pilih Kab/Kota --', ''), p_tgl_lahir: getVal('form-tanggal-lahir'),
@@ -380,12 +386,15 @@ window.simpanProfilKeServer = async function() {
         p_kendaraan: getVal('sarpras-kendaraan'), p_thn_kendaraan: getVal('form-tahun-kendaraan'), p_transmisi: getVal('form-transmisi-kendaraan'), p_kondisi: getVal('form-kondisi-kendaraan'),
         p_bbm: getVal('sarpras-bbm'), p_dana_bbm: getCheckedValues('chk-bbm'), p_rawat: getVal('sarpras-perawatan'), p_dana_rawat: getCheckedValues('chk-rawat'),
         p_sarpras_lain: getCheckedValues('chk-lain') + (document.getElementById('cek-lainnya') && document.getElementById('cek-lainnya').checked ? `, ${getName('form-sarpras-lainnya-sebutkan')}` : ''),
-        p_foto: base64FotoProfilAktif, p_jarak: getVal('form-jarak'), p_log_perubahan: infoPerubahan
+        p_foto: urlFotoFinal, p_jarak: getVal('form-jarak'), p_log_perubahan: infoPerubahan
     };
 
+    // === DETEKTIF PERUBAHAN (DIFF ENGINE) ===
     if (oldSesiStr) {
         const old = JSON.parse(oldSesiStr); let changes = [];
         if (old.nama_lengkap !== payload.p_nama) changes.push("Nama Lengkap");
+        if (old.gelar_depan !== payload.p_gelar_dp || old.gelar_belakang !== payload.p_gelar_bk) changes.push("Gelar");
+        if (old.tanggal_lahir !== payload.p_tgl_lahir) changes.push("Tgl Lahir");
         if (old.pendidikan_akhir !== payload.p_pendidikan) changes.push("Pendidikan");
         if (old.status_perkawinan !== payload.p_status_kawin) changes.push("Status Kawin");
         if (old.jumlah_anak !== payload.p_jml_anak) changes.push("Jml Anak");
@@ -394,16 +403,16 @@ window.simpanProfilKeServer = async function() {
         if (old.jarak_binaan !== payload.p_jarak) changes.push("Jarak Binaan");
         if (old.memiliki_balai !== payload.p_miliki_balai) changes.push("Status Balai");
         if (old.kendaraan_dinas !== payload.p_kendaraan) changes.push("Kendaraan");
-        if (old.foto_profil !== payload.p_foto && payload.p_foto !== "") changes.push("Foto Profil Baru");
+        if (fotoProfilBaruDipilih) changes.push("Foto Profil Baru");
         if (changes.length > 0) { payload.p_log_perubahan = "Memperbarui: " + changes.join(', '); } 
         else { payload.p_log_perubahan = "Menyimpan ulang profil (Tanpa Perubahan Signifikan)"; }
     }
 
     try {
-        const { data, error } = await mySupabase.rpc('simpan_update_profil', payload);
-        if(error) throw error;
-        localStorage.setItem('sesi_portal_pkb', JSON.stringify(data)); 
-        await pulihkanSesi(data); batalEditProfil(); alert("Pembaruan profil Anda telah berhasil disimpan.");
+        if(btnSimpan) btnSimpan.innerText = "Meneruskan ke Pusat...";
+        const { data, error } = await mySupabase.rpc('simpan_update_profil', payload); if(error) throw error;
+        localStorage.setItem('sesi_portal_pkb', JSON.stringify(data)); await pulihkanSesi(data); batalEditProfil(); 
+        alert("Pembaruan profil Anda telah berhasil disimpan dan langsung diterapkan di pangkalan data nasional.");
     } catch(err) { alert("Gagal melakukan pembaruan profil. Periksa koneksi Anda."); } 
     finally { if(btnSimpan) { btnSimpan.innerText = "Simpan Perubahan Data"; btnSimpan.disabled = false; } }
 };
@@ -422,8 +431,7 @@ window.ubahTemaAplikasi = function(theme) { document.documentElement.setAttribut
 window.ubahSkalaZoom = function(aksi) { if (aksi === '+') currentZoomLevel += 10; else if (aksi === '-') currentZoomLevel -= 10; else currentZoomLevel = 100; if (currentZoomLevel < 80) currentZoomLevel = 80; if (currentZoomLevel > 130) currentZoomLevel = 130; document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`); };
 
 window.addEventListener('DOMContentLoaded', () => {
-    setupFormLogika();
-    const sesiAktif = localStorage.getItem('sesi_portal_pkb');
+    setupFormLogika(); const sesiAktif = localStorage.getItem('sesi_portal_pkb');
     if (sesiAktif) { const ls = document.getElementById('loading-screen'); if(ls) ls.style.display = 'none'; pulihkanSesi(JSON.parse(sesiAktif)); } 
     else { tarikDataDasbor(); }
 });
