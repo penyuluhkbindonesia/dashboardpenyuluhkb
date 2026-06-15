@@ -28,7 +28,7 @@ function setTxt(id, txt) { const el = document.getElementById(id); if(el) el.inn
 function setVal(id, val) { const el = document.getElementById(id); if(el) el.value = val; }
 
 // ==========================================================================
-// 2. MESIN DASBOR & VISUALISASI GRAFIK (TETAP SAMA)
+// 2. MESIN DASBOR & VISUALISASI GRAFIK
 // ==========================================================================
 async function tarikDataDasbor() {
     const loader = document.getElementById('loading-screen'); if(loader) loader.style.display = 'flex';
@@ -81,12 +81,9 @@ window.navigasiLoginAtauKeluar = function() {
     const btn = document.getElementById('btn-auth-action'); if(!btn) return;
     if (btn.innerText === "Keluar Sesi") {
         localStorage.removeItem('sesi_portal_pkb'); localStorage.removeItem('activeTab'); localStorage.removeItem('activeTabAdmin');
-        
-        // Matikan semua portal
         if(document.getElementById('view-portal-pkb')) document.getElementById('view-portal-pkb').style.display = 'none'; 
         if(document.getElementById('view-portal-admin')) document.getElementById('view-portal-admin').style.display = 'none'; 
         if(document.getElementById('view-dasbor-publik')) document.getElementById('view-dasbor-publik').style.display = 'block';
-        
         setTxt('header-title', "Dashboard PenyuluhKB"); btn.innerText = "Masuk / Login"; tarikDataDasbor(); 
     } else { 
         if(document.getElementById('view-dasbor-publik')) document.getElementById('view-dasbor-publik').style.display = 'none'; 
@@ -101,7 +98,6 @@ window.kembaliKeDasborPublik = function() {
     if(document.getElementById('btn-auth-action')) document.getElementById('btn-auth-action').style.display = 'block'; 
 };
 
-// === RESEPSIONIS LOGIN UTAMA ===
 window.eksekusiLogin = async function() {
     const uIn = document.getElementById('inputUser'); const pIn = document.getElementById('inputPass'); const err = document.getElementById('pesan-error');
     if(!uIn || !pIn || !err) return; const user = uIn.value.trim(); const pass = pIn.value;
@@ -112,61 +108,106 @@ window.eksekusiLogin = async function() {
     btnLogin.innerText = "Memverifikasi..."; btnLogin.disabled = true;
 
     try {
-        // 1. Coba Ketuk Pintu Ruang Admin Dulu
         const { data: adminData, error: adminErr } = await mySupabase.rpc('otentikasi_admin', { p_username: user, p_password: pass });
-        
         if (adminData && !adminErr) {
-            // Berhasil sebagai Admin!
-            adminData.is_admin = true; // Beri stempel khusus
-            localStorage.setItem('sesi_portal_pkb', JSON.stringify(adminData)); 
-            localStorage.setItem('activeTabAdmin', 'beranda-admin'); 
-            pulihkanSesi(adminData);
-            return;
+            adminData.is_admin = true;
+            localStorage.setItem('sesi_portal_pkb', JSON.stringify(adminData)); localStorage.setItem('activeTabAdmin', 'beranda-admin'); 
+            pulihkanSesi(adminData); return;
         }
 
-        // 2. Jika Bukan Admin, Ketuk Pintu Ruang Pegawai (NIP)
         const { data: pegData, error: pegErr } = await mySupabase.rpc('otentikasi_pegawai', { p_nip: user });
         if (pegData && !pegErr) {
-            // Berhasil sebagai Pegawai!
-            localStorage.setItem('sesi_portal_pkb', JSON.stringify(pegData)); 
-            localStorage.setItem('activeTab', 'beranda'); 
-            pulihkanSesi(pegData);
-            return;
+            localStorage.setItem('sesi_portal_pkb', JSON.stringify(pegData)); localStorage.setItem('activeTab', 'beranda'); 
+            pulihkanSesi(pegData); return;
         }
-
-        // 3. Jika gagal di kedua pintu
         throw new Error("Akses Ditolak");
-
-    } catch (e) { 
-        err.style.display='block'; 
-        err.innerText="User/NIP Tidak Ditemukan atau Password Salah!"; 
-    } finally {
-        btnLogin.innerText = textAsli; btnLogin.disabled = false;
-    }
+    } catch (e) { err.style.display='block'; err.innerText="User/NIP Tidak Ditemukan atau Password Salah!"; } 
+    finally { btnLogin.innerText = textAsli; btnLogin.disabled = false; }
 };
+
+// ==========================================================================
+// 4. PENGELOLAAN REFERENSI WILAYAH (CASCADING)
+// ==========================================================================
+async function fetchWilayah(level, kodeInduk, targetId, placeholderText) {
+    const target = document.getElementById(targetId); if(!target) return;
+    target.innerHTML = `<option value="">-- Memuat... --</option>`;
+    let query = mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', level).order('nama');
+    if (kodeInduk) query = query.eq('kode_induk', kodeInduk); else query = query.is('kode_induk', null);
+    const { data } = await query; target.innerHTML = `<option value="">${placeholderText}</option>`;
+    if (data) { data.forEach(w => { target.innerHTML += `<option value="${w.kode}">${w.nama}</option>`; }); }
+}
+
+async function setSelectByText(selectId, textStr) {
+    if(!textStr) return null; const sel = document.getElementById(selectId); if(!sel) return null;
+    for(let i=0; i<sel.options.length; i++) { if(sel.options[i].text.toUpperCase() === textStr.toUpperCase()) { sel.selectedIndex = i; return sel.options[i].value; } }
+    return null;
+}
+
+window.popTLKab = function() { const el = document.getElementById('tl-provinsi'); if(el) fetchWilayah('Kabupaten/Kota', el.value, 'tl-kabupaten', '-- Pilih Kab/Kota --'); };
+window.popDomKab = function() { 
+    const el = document.getElementById('dom-prov'); if(el) fetchWilayah('Kabupaten/Kota', el.value, 'dom-kab', '-- Pilih Kab/Kota --'); 
+    const k = document.getElementById('dom-kec'); if(k) k.innerHTML = '<option value="">-- Kecamatan --</option>'; 
+    const d = document.getElementById('dom-desa'); if(d) d.innerHTML = '<option value="">-- Desa/Kel --</option>';
+};
+window.popDomKec = function() { 
+    const el = document.getElementById('dom-kab'); if(el) fetchWilayah('Kecamatan', el.value, 'dom-kec', '-- Kecamatan --'); 
+    const d = document.getElementById('dom-desa'); if(d) d.innerHTML = '<option value="">-- Desa/Kel --</option>';
+};
+window.popDomDesa = function() { const el = document.getElementById('dom-kec'); if(el) fetchWilayah('Desa/Kelurahan', el.value, 'dom-desa', '-- Desa/Kel --'); };
+window.popBinDesa = async function() {
+    const el = document.getElementById('bin-kec'); const wrap = document.getElementById('wrap-bin-desa'); if(!el || !wrap) return;
+    const kecKode = el.value; wrap.innerHTML = '<span style="color:var(--text-muted); font-style:italic;">Memuat desa...</span>'; if(!kecKode) return;
+    const { data } = await mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', 'Desa/Kelurahan').eq('kode_induk', kecKode).order('nama'); wrap.innerHTML = '';
+    if(data && data.length>0) { data.forEach(d => { wrap.innerHTML += `<label style="width:48%; display:inline-block; margin-bottom:5px;"><input type="checkbox" class="chk-binaan-desa" value="${d.nama}"> ${d.nama}</label>`; }); } 
+    else { wrap.innerHTML = '<span style="color:var(--text-muted); font-style:italic;">Data desa tidak tersedia.</span>'; }
+};
+
+// ==========================================================================
+// 5. INJEKSI DATA KE FORMULIR & TAMPILAN PROFIL
+// ==========================================================================
+let base64FotoProfilAktif = "";
+
+window.prosesFotoUpload = function(event) {
+    const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image(); img.onload = function() {
+            const canvas = document.createElement('canvas'); let width = img.width; let height = img.height;
+            if (width > height) { if (width > 400) { height *= 400 / width; width = 400; } } else { if (height > 400) { width *= 400 / height; height = 400; } }
+            canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            base64FotoProfilAktif = canvas.toDataURL('image/jpeg', 0.8); 
+            const prev = document.getElementById('preview-foto-img'); if(prev) prev.src = base64FotoProfilAktif;
+            fotoProfilBaruDipilih = true; 
+        }; img.src = e.target.result;
+    }; reader.readAsDataURL(file);
+};
+
+function setCheckboxes(className, valueString) {
+    document.querySelectorAll('.' + className).forEach(el => el.checked = false);
+    if(valueString) { const values = valueString.split(',').map(v => v.trim()); document.querySelectorAll('.' + className).forEach(el => { if(values.includes(el.value)) el.checked = true; }); }
+}
 
 async function pulihkanSesi(data) {
     const vl = document.getElementById('view-login'); if(vl) vl.style.display = 'none'; 
     const vdp = document.getElementById('view-dasbor-publik'); if(vdp) vdp.style.display = 'none';
     const ba = document.getElementById('btn-auth-action'); if(ba) { ba.style.display = 'block'; ba.innerText = "Keluar Sesi"; }
-    
-    // Sembunyikan semua portal dulu
     const vpkb = document.getElementById('view-portal-pkb'); if(vpkb) vpkb.style.display = 'none';
     const vadmin = document.getElementById('view-portal-admin'); if(vadmin) vadmin.style.display = 'none';
 
-    // === LOGIKA JIKA YANG LOGIN ADALAH ADMIN ===
+    // === LOGIKA JIKA ADMIN ===
     if (data.is_admin || data.level_admin) {
         setTxt('header-title', `Portal Admin: ${data.wilayah_akses} (${data.level_admin})`);
         setTxt('teks-sapaan-admin', `Selamat Datang, ${data.nama_lengkap}`);
         setTxt('teks-wilayah-admin', `Kewenangan Akses: Wilayah ${data.wilayah_akses}`);
         
+        muatDataAdmin(data.level_admin, data.wilayah_akses);
+
         if(vadmin) vadmin.style.display = 'grid';
         const tabTerakhir = localStorage.getItem('activeTabAdmin') || 'beranda-admin'; 
         pindahTabAdmin(tabTerakhir);
-        return; // Selesai urusan Admin
+        return; 
     }
 
-    // === LOGIKA JIKA YANG LOGIN ADALAH PEGAWAI BIASA ===
+    // === LOGIKA JIKA PEGAWAI ===
     const gelarLengkap = (data.gelar_depan ? data.gelar_depan + " " : "") + data.nama_lengkap + (data.gelar_belakang ? ", " + data.gelar_belakang : "");
     const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
     
@@ -238,7 +279,6 @@ async function pulihkanSesi(data) {
     }
     if(data.jarak_binaan) setVal('form-jarak', data.jarak_binaan);
 
-    // Siapkan UI Beranda
     const jam = new Date().getHours(); let sapaan = 'Malam'; if (jam >= 3 && jam < 11) sapaan = 'Pagi'; else if (jam >= 11 && jam < 15) sapaan = 'Siang'; else if (jam >= 15 && jam < 18) sapaan = 'Sore';
     setTxt('teks-sapaan', `Selamat ${sapaan}, ${data.nama_lengkap}`);
     if (localStorage.getItem('statusKunjunganPortal')) setTxt('teks-sambutan', "Selamat Datang Kembali di Portal PenyuluhKB Indonesia"); 
@@ -247,7 +287,7 @@ async function pulihkanSesi(data) {
     setTxt('header-title', `Portal: ${data.nama_lengkap}`);
     if(vpkb) vpkb.style.display = 'grid';
 
-    // Pemulihan Wilayah (Selesai di Akhir)
+    // Pemulihan Wilayah
     await fetchWilayah('Provinsi', null, 'tl-provinsi', '-- Pilih Provinsi --');
     const kdTLProv = await setSelectByText('tl-provinsi', data.tempat_lahir_provinsi);
     if(kdTLProv) { await fetchWilayah('Kabupaten/Kota', kdTLProv, 'tl-kabupaten', '-- Pilih Kab/Kota --'); await setSelectByText('tl-kabupaten', data.tempat_lahir_kabupaten); }
@@ -278,13 +318,10 @@ async function pulihkanSesi(data) {
 }
 
 // ==========================================================================
-// 4. ENGINE NAVIGASI & FORM (ADMIN + PEGAWAI)
+// 6. ENGINE NAVIGASI, FORM & PENYIMPANAN PEGAWAI
 // ==========================================================================
-// Pindah Tab Pegawai
 window.pindahTabPortal = function(tabId) { document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active')); const target = document.getElementById(`tab-${tabId}`); if(target) target.style.display = 'block'; const activeLink = document.querySelector(`.tab-link[onclick="pindahTabPortal('${tabId}')"]`); if(activeLink) activeLink.classList.add('active'); localStorage.setItem('activeTab', tabId); };
-// Pindah Tab Admin
 window.pindahTabAdmin = function(tabId) { document.querySelectorAll('.tab-content-admin').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab-link-admin').forEach(l => l.classList.remove('active')); const target = document.getElementById(`tab-${tabId}`); if(target) target.style.display = 'block'; const activeLink = document.querySelector(`.tab-link-admin[onclick="pindahTabAdmin('${tabId}')"]`); if(activeLink) activeLink.classList.add('active'); localStorage.setItem('activeTabAdmin', tabId); };
-
 window.bukaFormEditProfil = function() { const vpu = document.getElementById('view-profil-utama'); if(vpu) vpu.style.display = 'none'; const fep = document.getElementById('form-edit-profil'); if(fep) fep.style.display = 'block'; };
 window.batalEditProfil = function() { document.getElementById('form-edit-profil').style.display = 'none'; document.getElementById('view-profil-utama').style.display = 'block'; };
 window.bukaModalLog = function() { const ml = document.getElementById('modal-log'); if(ml) ml.style.display = 'flex'; };
@@ -322,16 +359,12 @@ function getCheckedValues(className) {
     let checked = []; document.querySelectorAll('.' + className + ':checked').forEach(el => checked.push(el.value)); return checked.join(', ');
 }
 
-// ==========================================================================
-// 5. PENYIMPANAN DATA PROFIL
-// ==========================================================================
 window.simpanProfilKeServer = async function() {
     const btnSimpan = document.getElementById('btn-simpan-profil');
     try {
         const fnip = document.getElementById('form-nip'); 
         if(!fnip || !fnip.value) { alert("Sesi NIP tidak ditemukan. Mohon refresh halaman."); return; } 
         const nip = fnip.value;
-        
         if(!confirm("Simpan perubahan data profil dan foto ini ke server pusat?")) return;
         if(btnSimpan) { btnSimpan.innerText = "Memproses Data..."; btnSimpan.disabled = true; }
 
@@ -394,9 +427,7 @@ window.simpanProfilKeServer = async function() {
         const { data, error } = await mySupabase.rpc('simpan_update_profil', payload);
         if(error) throw error;
         
-        localStorage.setItem('sesi_portal_pkb', JSON.stringify(data)); 
-        await pulihkanSesi(data); 
-        batalEditProfil(); 
+        localStorage.setItem('sesi_portal_pkb', JSON.stringify(data)); await pulihkanSesi(data); batalEditProfil(); 
         alert("Pembaruan profil Anda telah berhasil disimpan.");
 
     } catch(err) {
@@ -423,10 +454,65 @@ window.tutupFileFullscreen = function() { const vo = document.getElementById('vi
 window.ubahTemaAplikasi = function(theme) { document.documentElement.setAttribute('data-theme', theme); };
 window.ubahSkalaZoom = function(aksi) { if (aksi === '+') currentZoomLevel += 10; else if (aksi === '-') currentZoomLevel -= 10; else currentZoomLevel = 100; if (currentZoomLevel < 80) currentZoomLevel = 80; if (currentZoomLevel > 130) currentZoomLevel = 130; document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`); };
 
+// ==========================================================================
+// 7. FUNGSI KHUSUS ADMIN (TABEL & EXPORT)
+// ==========================================================================
+window.dataPegawaiAdmin = []; // Penyimpanan global untuk diekspor
+
+async function muatDataAdmin(level, wilayah) {
+    setTxt('adm-kpi-total', 'Memuat...'); setTxt('adm-kpi-update', 'Memuat...');
+    const { data, error } = await mySupabase.rpc('get_data_admin', { p_level: level, p_wilayah: wilayah });
+    
+    if (!error && data) {
+        setTxt('adm-kpi-total', formatAngka(data.kpi.total));
+        setTxt('adm-kpi-update', formatAngka(data.kpi.updated));
+        window.dataPegawaiAdmin = data.pegawai;
+        
+        const tbody = document.querySelector('#tabel-admin-pegawai tbody');
+        if (tbody) {
+            tbody.innerHTML = '';
+            if(data.pegawai.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data pegawai di wilayah ini.</td></tr>';
+            } else {
+                data.pegawai.forEach(p => {
+                    let badgeStatus = p.status_update ? '<span style="color:#28a745; font-weight:bold;">✓ Sudah Update</span>' : '<span style="color:#dc3545; font-weight:bold;">✗ Belum Update</span>';
+                    tbody.innerHTML += `<tr>
+                        <td>${p.nip}</td>
+                        <td style="font-weight:bold; color:#0056b3;">${p.nama_lengkap}</td>
+                        <td>${p.kabupaten}</td>
+                        <td>${p.jabatan}</td>
+                        <td>${badgeStatus}</td>
+                    </tr>`;
+                });
+            }
+        }
+    }
+}
+
+window.unduhDataAdminCSV = function() {
+    if(!window.dataPegawaiAdmin || window.dataPegawaiAdmin.length === 0) {
+        alert("Tidak ada data untuk diekspor."); return;
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8,NIP,Nama Lengkap,Provinsi,Kabupaten,Jabatan,Status Update\r\n";
+    window.dataPegawaiAdmin.forEach(row => {
+        let status = row.status_update ? "Sudah Update" : "Belum Update";
+        let rowStr = `"${row.nip}","${row.nama_lengkap}","${row.provinsi}","${row.kabupaten}","${row.jabatan}","${status}"`;
+        csvContent += rowStr + "\r\n";
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Data_Pegawai_${new Date().getTime()}.csv`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+};
+
+// ==========================================================================
+// INISIALISASI APLIKASI
+// ==========================================================================
 window.addEventListener('DOMContentLoaded', () => {
     setupFormLogika(); 
-    
-    // === REGISTRASI PWA ENGINE ===
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('service-worker.js')
         .then(() => console.log("PWA Offline Engine: Aktif!"))
@@ -437,7 +523,5 @@ window.addEventListener('DOMContentLoaded', () => {
     if (sesiAktif) { 
         const ls = document.getElementById('loading-screen'); if(ls) ls.style.display = 'none'; 
         pulihkanSesi(JSON.parse(sesiAktif)); 
-    } else { 
-        tarikDataDasbor(); 
-    }
+    } else { tarikDataDasbor(); }
 });
