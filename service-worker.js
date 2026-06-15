@@ -4,7 +4,7 @@ const ASSETS_TO_CACHE = [
   'index.html',
   'app.js',
   'manifest.json',
-  'dashboardpkb.webp'
+  'dashboardpkb.png'
 ];
 
 // 1. Fase Instalasi: Rekam semua aset penting ke memori HP
