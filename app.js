@@ -435,7 +435,16 @@ window.ubahTemaAplikasi = function(theme) { document.documentElement.setAttribut
 window.ubahSkalaZoom = function(aksi) { if (aksi === '+') currentZoomLevel += 10; else if (aksi === '-') currentZoomLevel -= 10; else currentZoomLevel = 100; if (currentZoomLevel < 80) currentZoomLevel = 80; if (currentZoomLevel > 130) currentZoomLevel = 130; document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`); };
 
 window.addEventListener('DOMContentLoaded', () => {
-    setupFormLogika(); const sesiAktif = localStorage.getItem('sesi_portal_pkb');
+    setupFormLogika(); 
+
+    // SUNTIKAN KODE PWA DI SINI
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log("PWA Offline Engine: Aktif!"))
+        .catch((err) => console.error("PWA Gagal:", err));
+    }
+
+    const sesiAktif = localStorage.getItem('sesi_portal_pkb');
     if (sesiAktif) { const ls = document.getElementById('loading-screen'); if(ls) ls.style.display = 'none'; pulihkanSesi(JSON.parse(sesiAktif)); } 
     else { tarikDataDasbor(); }
 });
