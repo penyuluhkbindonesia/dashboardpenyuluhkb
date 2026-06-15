@@ -508,6 +508,57 @@ window.unduhDataAdminCSV = function() {
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
 };
 
+window.unduhDataAdminExcel = function() {
+    if(!window.dataPegawaiAdmin || window.dataPegawaiAdmin.length === 0) { alert("Tidak ada data untuk diekspor."); return; }
+    
+    // Siapkan data untuk SheetJS
+    const formatData = window.dataPegawaiAdmin.map(row => ({
+        "NIP Pegawai": row.nip, 
+        "Nama Lengkap": row.nama_lengkap, 
+        "Provinsi": row.provinsi, 
+        "Kabupaten/Kota": row.kabupaten, 
+        "Jabatan": row.jabatan, 
+        "Status Validasi": row.status_update ? "Sudah Update" : "Belum Update"
+    }));
+    
+    // Eksekusi Pembuatan Excel
+    const worksheet = XLSX.utils.json_to_sheet(formatData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Pegawai");
+    XLSX.writeFile(workbook, `Data_Pegawai_${new Date().getTime()}.xlsx`);
+};
+
+window.unduhDataAdminPDF = function() {
+    if(!window.dataPegawaiAdmin || window.dataPegawaiAdmin.length === 0) { alert("Tidak ada data untuk dicetak."); return; }
+    
+    // Inisialisasi jsPDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape'); // Kertas memanjang
+    
+    // Judul PDF
+    doc.setFontSize(16);
+    doc.text("Rekapitulasi Data Pegawai / Penyuluh KB", 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Waktu Cetak: ${new Date().toLocaleString('id-ID')}`, 14, 22);
+
+    // Siapkan Tabel
+    const tableColumn = ["NIP", "Nama Lengkap", "Provinsi", "Kabupaten/Kota", "Jabatan", "Status Data"];
+    const tableRows = window.dataPegawaiAdmin.map(row => [
+        row.nip, row.nama_lengkap, row.provinsi, row.kabupaten, row.jabatan, row.status_update ? "Sudah Update" : "Belum Update"
+    ]);
+
+    // Eksekusi Cetak Tabel ke PDF
+    doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 28,
+        theme: 'grid',
+        headStyles: { fillColor: [111, 66, 193] } // Warna Ungu Admin
+    });
+    
+    doc.save(`Data_Pegawai_${new Date().getTime()}.pdf`);
+};
+
 // ==========================================================================
 // INISIALISASI APLIKASI
 // ==========================================================================
