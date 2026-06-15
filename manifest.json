@@ -3,8 +3,8 @@
   "name": "Portal PenyuluhKB Indonesia",
   "icons": [
     {
-      "src": "dashboardpkb.webp",
-      "type": "image/webp",
+      "src": "dashboardpkb.png",
+      "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
