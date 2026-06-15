@@ -325,6 +325,10 @@ window.updateDataKeluarga = function() {
     else { wrpAnak.style.display = 'block'; wrpKB.style.display = 'block'; }
 };
 
+function getCheckedValues(className) {
+    let checked = []; document.querySelectorAll('.' + className + ':checked').forEach(el => checked.push(el.value)); return checked.join(', ');
+}
+
 window.simpanProfilKeServer = async function() {
     const btnSimpan = document.getElementById('btn-simpan-profil');
     try {
