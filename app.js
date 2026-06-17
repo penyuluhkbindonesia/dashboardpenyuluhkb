@@ -455,100 +455,209 @@ window.ubahTemaAplikasi = function(theme) { document.documentElement.setAttribut
 window.ubahSkalaZoom = function(aksi) { if (aksi === '+') currentZoomLevel += 10; else if (aksi === '-') currentZoomLevel -= 10; else currentZoomLevel = 100; if (currentZoomLevel < 80) currentZoomLevel = 80; if (currentZoomLevel > 130) currentZoomLevel = 130; document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`); };
 
 // ==========================================================================
-// 7. FUNGSI KHUSUS ADMIN (TABEL & EXPORT EXCEL/PDF/CSV)
+// 7. FUNGSI KHUSUS ADMIN (TABEL REKAP & EXPORT EXCEL/PDF/CSV)
 // ==========================================================================
 window.dataPegawaiAdmin = []; 
+window.wilayahAdminAktif = '';
 
 async function muatDataAdmin(level, wilayah) {
+    window.wilayahAdminAktif = wilayah;
     setTxt('adm-kpi-total', 'Memuat...'); setTxt('adm-kpi-update', 'Memuat...');
-    const { data, error } = await mySupabase.rpc('get_data_admin', { p_level: level, p_wilayah: wilayah });
     
-    if (!error && data) {
-        setTxt('adm-kpi-total', formatAngka(data.kpi.total));
-        setTxt('adm-kpi-update', formatAngka(data.kpi.updated));
-        window.dataPegawaiAdmin = data.pegawai;
+    const thead = document.querySelector('#tabel-admin-pegawai thead');
+    const tbody = document.querySelector('#tabel-admin-pegawai tbody');
+
+    if (level === 'Nasional') {
+        // === LOGIKA ADMIN PUSAT (TABEL REKAPITULASI) ===
+        const { data, error } = await mySupabase.rpc('get_rekap_pusat');
         
-        const tbody = document.querySelector('#tabel-admin-pegawai tbody');
-        if (tbody) {
-            tbody.innerHTML = '';
-            if(data.pegawai.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data pegawai di wilayah ini.</td></tr>';
-            } else {
-                data.pegawai.forEach(p => {
-                    let badgeStatus = p.status_update ? '<span style="color:#28a745; font-weight:bold;">✓ Sudah Update</span>' : '<span style="color:#dc3545; font-weight:bold;">✗ Belum Update</span>';
-                    tbody.innerHTML += `<tr>
-                        <td>${p.nip}</td>
-                        <td style="font-weight:bold; color:#0056b3;">${p.nama_lengkap}</td>
-                        <td>${p.kabupaten}</td>
-                        <td>${p.jabatan}</td>
-                        <td>${badgeStatus}</td>
-                    </tr>`;
-                });
+        if (!error && data) {
+            let totPegawai = 0; let totUpdate = 0;
+            let htmlTable = '';
+            let optionsProv = '<option value="">-- Pilih Provinsi --</option>';
+
+            if(thead) thead.innerHTML = `<tr><th>No</th><th>Nama Provinsi</th><th style="text-align:center;">Total Pegawai</th><th style="text-align:center;">Sudah Update</th><th style="text-align:center;">Belum Update</th><th style="text-align:center;">Capaian</th></tr>`;
+            
+            data.forEach((row, i) => {
+                totPegawai += Number(row.total_pegawai);
+                totUpdate += Number(row.sudah_update);
+                let warna = row.persentase >= 80 ? '#28a745' : (row.persentase >= 50 ? '#ffc107' : '#dc3545');
+                
+                htmlTable += `<tr>
+                    <td>${i+1}</td>
+                    <td style="font-weight:bold; color:#0056b3;">${row.nama_wilayah}</td>
+                    <td style="text-align:center;">${formatAngka(row.total_pegawai)}</td>
+                    <td style="text-align:center; color:#28a745;">${formatAngka(row.sudah_update)}</td>
+                    <td style="text-align:center; color:#dc3545;">${formatAngka(row.belum_update)}</td>
+                    <td style="text-align:center;"><span style="background:${warna}; color:white; padding:3px 8px; border-radius:4px; font-weight:bold;">${row.persentase}%</span></td>
+                </tr>`;
+                optionsProv += `<option value="${row.nama_wilayah}">${row.nama_wilayah}</option>`;
+            });
+            
+            if(tbody) tbody.innerHTML = htmlTable.length ? htmlTable : '<tr><td colspan="6" style="text-align:center;">Tidak ada data rekapitulasi.</td></tr>';
+            setTxt('adm-kpi-total', formatAngka(totPegawai));
+            setTxt('adm-kpi-update', formatAngka(totUpdate));
+            
+            siapkanUIExportPusat(optionsProv);
+        } else {
+            setTxt('adm-kpi-total', '0'); setTxt('adm-kpi-update', '0');
+            if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Gagal memuat rekapitulasi. Pastikan fungsi SQL get_rekap_pusat sudah dibuat.</td></tr>';
+        }
+    } else {
+        // === LOGIKA ADMIN DAERAH (TABEL DETAIL) ===
+        const { data, error } = await mySupabase.rpc('get_data_admin', { p_level: level, p_wilayah: wilayah });
+        
+        if (!error && data) {
+            setTxt('adm-kpi-total', formatAngka(data.kpi.total));
+            setTxt('adm-kpi-update', formatAngka(data.kpi.updated));
+            window.dataPegawaiAdmin = data.pegawai || [];
+            
+            if(thead) thead.innerHTML = `<tr><th>NIP</th><th>Nama Lengkap</th><th>Kabupaten/Kota</th><th>Jabatan</th><th>Status Data</th></tr>`;
+            
+            if(tbody) {
+                if(window.dataPegawaiAdmin.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data pegawai di wilayah ini.</td></tr>';
+                } else {
+                    let htmlContent = '';
+                    let batasTampil = Math.min(window.dataPegawaiAdmin.length, 100);
+                    for(let i=0; i<batasTampil; i++){
+                        let p = window.dataPegawaiAdmin[i];
+                        let badgeStatus = p.status_update ? '<span style="color:#28a745; font-weight:bold;">✓ Sudah Update</span>' : '<span style="color:#dc3545; font-weight:bold;">✗ Belum Update</span>';
+                        htmlContent += `<tr><td>${p.nip}</td><td style="font-weight:bold; color:#0056b3;">${p.nama_lengkap}</td><td>${p.kabupaten}</td><td>${p.jabatan}</td><td>${badgeStatus}</td></tr>`;
+                    }
+                    if(window.dataPegawaiAdmin.length > 100) {
+                        htmlContent += `<tr><td colspan="5" style="text-align:center; padding:15px; background:#f8f9fa;"><i>Menampilkan 100 baris pertama. Gunakan menu Ekspor untuk melihat seluruh <b>${formatAngka(window.dataPegawaiAdmin.length)}</b> data.</i></td></tr>`;
+                    }
+                    tbody.innerHTML = htmlContent;
+                }
             }
+            siapkanUIExportDaerah();
         }
     }
 }
 
-window.unduhDataAdminCSV = function() {
-    if(!window.dataPegawaiAdmin || window.dataPegawaiAdmin.length === 0) { alert("Tidak ada data untuk diekspor."); return; }
+// Menyesuaikan UI Tab Ekspor khusus untuk PUSAT (Menambahkan Dropdown Filter)
+function siapkanUIExportPusat(optionsProv) {
+    const tabEkspor = document.getElementById('tab-ekspor-data');
+    if(!tabEkspor) return;
+    tabEkspor.innerHTML = `
+        <h2 style="color: #6f42c1;">Pusat Unduhan (Ekspor Data)</h2>
+        <div class="form-section">
+            <h3>Tarik Data Lengkap Wilayah</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Pilih provinsi terlebih dahulu untuk mengunduh data agar proses penarikan lebih ringan dan cepat.</p>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <select id="filter-prov-export" style="padding: 10px; border-radius: 4px; border: 1px solid #ccc; max-width: 250px; font-size:1rem;">
+                    ${optionsProv}
+                </select>
+                <button class="btn-primary" id="btn-dl-xls" style="width: auto; background-color: #28a745; padding: 12px 20px; margin:0;" onclick="unduhDataAdminPusat('excel')" disabled>📊 Unduh Excel (.XLSX)</button>
+                <button class="btn-primary" id="btn-dl-pdf" style="width: auto; background-color: #dc3545; padding: 12px 20px; margin:0;" onclick="unduhDataAdminPusat('pdf')" disabled>📄 Unduh PDF (.PDF)</button>
+                <button class="btn-primary" id="btn-dl-csv" style="width: auto; background-color: #17a2b8; padding: 12px 20px; margin:0;" onclick="unduhDataAdminPusat('csv')" disabled>📝 Unduh Data (.CSV)</button>
+            </div>
+            <p id="status-dl-pusat" style="color:#0056b3; font-weight:bold; margin-top:15px; display:none;">Sedang mengambil data dari peladen, mohon tunggu...</p>
+        </div>
+    `;
     
-    let csvContent = "data:text/csv;charset=utf-8,NIP,Nama Lengkap,Provinsi,Kabupaten,Jabatan,Status Update\r\n";
-    window.dataPegawaiAdmin.forEach(row => {
-        let status = row.status_update ? "Sudah Update" : "Belum Update";
-        let rowStr = `"${row.nip}","${row.nama_lengkap}","${row.provinsi}","${row.kabupaten}","${row.jabatan}","${status}"`;
-        csvContent += rowStr + "\r\n";
+    document.getElementById('filter-prov-export').addEventListener('change', function(e) {
+        const val = e.target.value;
+        ['btn-dl-csv', 'btn-dl-xls', 'btn-dl-pdf'].forEach(id => {
+            const btn = document.getElementById(id);
+            if(btn) { if(val) btn.removeAttribute('disabled'); else btn.setAttribute('disabled', 'true'); }
+        });
     });
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Data_Pegawai_${new Date().getTime()}.csv`);
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+}
+
+// Menyesuaikan UI Tab Ekspor khusus untuk DAERAH (Tanpa Filter)
+function siapkanUIExportDaerah() {
+    const tabEkspor = document.getElementById('tab-ekspor-data');
+    if(!tabEkspor) return;
+    tabEkspor.innerHTML = `
+        <h2 style="color: #6f42c1;">Pusat Unduhan (Ekspor Data)</h2>
+        <div class="form-section">
+            <h3>Tarik Data Lengkap Wilayah Anda</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Unduh seluruh data pegawai di wilayah Anda yang mencakup nama, NIP, jabatan, dan status pembaruan profil saat ini dalam berbagai format pelaporan.</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn-primary" style="width: auto; background-color: #28a745; padding: 12px 20px; margin:0;" onclick="unduhDataAdminDaerah('excel')">📊 Unduh Excel (.XLSX)</button>
+                <button class="btn-primary" style="width: auto; background-color: #dc3545; padding: 12px 20px; margin:0;" onclick="unduhDataAdminDaerah('pdf')">📄 Unduh PDF (.PDF)</button>
+                <button class="btn-primary" style="width: auto; background-color: #17a2b8; padding: 12px 20px; margin:0;" onclick="unduhDataAdminDaerah('csv')">📝 Unduh Data (.CSV)</button>
+            </div>
+        </div>
+    `;
+}
+
+// Helper Utama Pembuat File Ekspor (CSV/Excel/PDF)
+function prosesUnduhDokumen(dataArr, format, filenamePrefix) {
+    if(!dataArr || dataArr.length === 0) { alert("Tidak ada data untuk diekspor."); return; }
+    const filename = `${filenamePrefix}_${new Date().getTime()}`;
+
+    if(format === 'csv') {
+        let csvContent = "\uFEFFNIP;Nama Lengkap;Provinsi;Kabupaten;Jabatan;Status Update\r\n";
+        dataArr.forEach(row => {
+            let status = row.status_update ? "Sudah Update" : "Belum Update";
+            csvContent += `"${row.nip}";"${row.nama_lengkap}";"${row.provinsi}";"${row.kabupaten}";"${row.jabatan}";"${status}"\r\n`;
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob); link.download = `${filename}.csv`; 
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    } 
+    else if (format === 'excel') {
+        const formatData = dataArr.map(row => ({
+            "NIP Pegawai": row.nip, "Nama Lengkap": row.nama_lengkap, 
+            "Provinsi": row.provinsi, "Kabupaten/Kota": row.kabupaten, 
+            "Jabatan": row.jabatan, "Status Validasi": row.status_update ? "Sudah Update" : "Belum Update"
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(formatData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Pegawai");
+        XLSX.writeFile(workbook, `${filename}.xlsx`);
+    }
+    else if (format === 'pdf') {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape'); 
+        doc.setFontSize(16); doc.text("Rekapitulasi Data Pegawai", 14, 15);
+        doc.setFontSize(10); doc.text(`Waktu Cetak: ${new Date().toLocaleString('id-ID')}`, 14, 22);
+        const tableColumn = ["NIP", "Nama Lengkap", "Provinsi", "Kabupaten/Kota", "Jabatan", "Status Data"];
+        const tableRows = dataArr.map(row => [row.nip, row.nama_lengkap, row.provinsi, row.kabupaten, row.jabatan, row.status_update ? "Sudah Update" : "Belum Update"]);
+        doc.autoTable({ head: [tableColumn], body: tableRows, startY: 28, theme: 'grid', headStyles: { fillColor: [111, 66, 193] } });
+        doc.save(`${filename}.pdf`);
+    }
+}
+
+window.unduhDataAdminDaerah = function(format) {
+    prosesUnduhDokumen(window.dataPegawaiAdmin, format, `Pegawai_${window.wilayahAdminAktif.replace(/\s+/g, '_')}`);
 };
 
-window.unduhDataAdminExcel = function() {
-    if(!window.dataPegawaiAdmin || window.dataPegawaiAdmin.length === 0) { alert("Tidak ada data untuk diekspor."); return; }
+window.unduhDataAdminPusat = async function(format) {
+    const prov = document.getElementById('filter-prov-export').value;
+    if(!prov) return;
     
-    const formatData = window.dataPegawaiAdmin.map(row => ({
-        "NIP Pegawai": row.nip, 
-        "Nama Lengkap": row.nama_lengkap, 
-        "Provinsi": row.provinsi, 
-        "Kabupaten/Kota": row.kabupaten, 
-        "Jabatan": row.jabatan, 
-        "Status Validasi": row.status_update ? "Sudah Update" : "Belum Update"
-    }));
-    
-    const worksheet = XLSX.utils.json_to_sheet(formatData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Pegawai");
-    XLSX.writeFile(workbook, `Data_Pegawai_${new Date().getTime()}.xlsx`);
-};
+    const info = document.getElementById('status-dl-pusat');
+    if(info) info.style.display = 'block';
 
-window.unduhDataAdminPDF = function() {
-    if(!window.dataPegawaiAdmin || window.dataPegawaiAdmin.length === 0) { alert("Tidak ada data untuk dicetak."); return; }
-    
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape'); 
-    
-    doc.setFontSize(16);
-    doc.text("Rekapitulasi Data Pegawai / Penyuluh KB", 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Waktu Cetak: ${new Date().toLocaleString('id-ID')}`, 14, 22);
-
-    const tableColumn = ["NIP", "Nama Lengkap", "Provinsi", "Kabupaten/Kota", "Jabatan", "Status Data"];
-    const tableRows = window.dataPegawaiAdmin.map(row => [
-        row.nip, row.nama_lengkap, row.provinsi, row.kabupaten, row.jabatan, row.status_update ? "Sudah Update" : "Belum Update"
-    ]);
-
-    doc.autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 28,
-        theme: 'grid',
-        headStyles: { fillColor: [111, 66, 193] }
-    });
-    
-    doc.save(`Data_Pegawai_${new Date().getTime()}.pdf`);
+    try {
+        const { data, error } = await mySupabase
+            .from('data_aktif_pkb')
+            .select('nip, nama_lengkap, provinsi, kabupaten, jabatan, status_perkawinan')
+            .eq('provinsi', prov)
+            .order('nama_lengkap', { ascending: true });
+            
+        if(error) throw error;
+        
+        // Konversi kolom status_perkawinan ke standar status_update untuk prosesUnduhDokumen
+        const mappedData = data.map(d => ({
+            nip: d.nip, nama_lengkap: d.nama_lengkap, provinsi: d.provinsi, 
+            kabupaten: d.kabupaten, jabatan: d.jabatan, 
+            status_update: d.status_perkawinan ? true : false
+        }));
+        
+        prosesUnduhDokumen(mappedData, format, `Pegawai_${prov.replace(/\s+/g, '_')}`);
+    } catch (e) {
+        console.error(e);
+        alert("Gagal menarik data spesifik wilayah dari server. Periksa koneksi Anda.");
+    } finally {
+        if(info) info.style.display = 'none';
+    }
 };
 
 // ==========================================================================
