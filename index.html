@@ -90,6 +90,7 @@
         .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #0056b3; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
+    
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/chart.js@4"></script>
     
@@ -148,7 +149,7 @@
                     <li class="tab-link-admin active" onclick="pindahTabAdmin('beranda-admin')">Beranda Admin</li>
                     <li class="tab-link-admin" onclick="pindahTabAdmin('progres-update')">Pantau Progres</li>
                     <li class="tab-link-admin" onclick="pindahTabAdmin('daftar-pegawai')">Daftar Pegawai</li>
-                    <li class="tab-link-admin" onclick="pindahTabAdmin('ekspor-data')">Ekspor Data (Excel)</li>
+                    <li class="tab-link-admin" onclick="pindahTabAdmin('ekspor-data')">Ekspor Data</li>
                 </ul>
             </div>
             <div class="portal-viewport">
@@ -189,11 +190,14 @@
 
                 <div id="tab-ekspor-data" class="panel tab-content-admin" style="display: none;">
                     <h2 style="color: #6f42c1;">Pusat Unduhan (Ekspor Data)</h2>
-                    <div class="dua-kolom-grid">
-                        <div class="form-section">
-                            <h3>Tarik Data Lengkap (CSV)</h3>
-                            <p style="color: var(--text-muted); font-size: 0.9rem;">Unduh seluruh data pegawai di wilayah Anda yang mencakup nama, NIP, jabatan, dan status pembaruan profil saat ini.</p>
-                            <button class="btn-primary" style="background-color: #28a745; margin-top: 15px;" onclick="unduhDataAdminCSV()">⬇️ Unduh Data (.CSV)</button>
+                    <div class="form-section">
+                        <h3>Tarik Data Lengkap Wilayah</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Unduh seluruh data pegawai di wilayah Anda yang mencakup nama, NIP, jabatan, dan status pembaruan profil saat ini dalam berbagai format pelaporan.</p>
+                        
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn-primary" style="width: auto; background-color: #28a745; padding: 12px 20px;" onclick="unduhDataAdminExcel()">📊 Unduh Excel (.XLSX)</button>
+                            <button class="btn-primary" style="width: auto; background-color: #dc3545; padding: 12px 20px;" onclick="unduhDataAdminPDF()">📄 Unduh PDF (.PDF)</button>
+                            <button class="btn-primary" style="width: auto; background-color: #17a2b8; padding: 12px 20px;" onclick="unduhDataAdminCSV()">📝 Unduh Data (.CSV)</button>
                         </div>
                     </div>
                 </div>
