@@ -13,7 +13,6 @@ let chartProvInstance = null; let chartUmurInstance = null; let chartJabatanInst
 let chartGenerasiInstance = null; let chartPendidikanInstance = null; let chartGolonganInstance = null;
 let fotoProfilBaruDipilih = false; 
 
-// STATE MANAJEMEN FILTER UNTUK ADMIN
 window.adminOriginal = { level: null, wilayah: null };
 window.adminCurrent = { level: null, wilayah: null };
 
@@ -31,7 +30,7 @@ function setTxt(id, txt) { const el = document.getElementById(id); if(el) el.inn
 function setVal(id, val) { const el = document.getElementById(id); if(el) el.value = val; }
 
 // ==========================================================================
-// 2. MESIN DASBOR PUBLIK & VISUALISASI GRAFIK
+// 2. MESIN DASBOR & VISUALISASI GRAFIK
 // ==========================================================================
 async function tarikDataDasbor() {
     const loader = document.getElementById('loading-screen'); if(loader) loader.style.display = 'flex';
@@ -165,11 +164,6 @@ window.popBinDesa = async function() {
     else { wrap.innerHTML = '<span style="color:var(--text-muted); font-style:italic;">Data desa tidak tersedia.</span>'; }
 };
 
-// ==========================================================================
-// 5. INJEKSI DATA KE FORMULIR & TAMPILAN PROFIL
-// ==========================================================================
-let base64FotoProfilAktif = "";
-
 window.prosesFotoUpload = function(event) {
     const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
     reader.onload = function(e) {
@@ -190,7 +184,7 @@ function setCheckboxes(className, valueString) {
 }
 
 // ==========================================================================
-// PENTING: PENARIKAN DATA DASBOR ADMIN & FUNGSI FILTER HIERARKIS
+// 5. PENTING: PENARIKAN DATA DASBOR ADMIN & FUNGSI FILTER HIERARKIS + A-Z
 // ==========================================================================
 window.terapkanFilterAdmin = function(targetLevel, targetWilayah) {
     window.adminCurrent.level = targetLevel;
@@ -227,24 +221,41 @@ async function muatBerandaAdmin(level, wilayah) {
             setTxt('adm-kpi-balai', formatAngka(data.kpi.punya_balai));
             setTxt('adm-kpi-pensiun', formatAngka(data.pensiun_2026));
 
+            // ==== 1. LOGIKA URUTAN KARTU SEBARAN WILAYAH (A-Z BY KODE) ====
             const container = document.getElementById('adm-container-cards');
             if (container) {
                 container.innerHTML = '';
                 if (data.cards && data.cards.length > 0) {
                     
-                    // PERBAIKAN: Mengurutkan kartu sebaran secara Alfabet (A-Z)
-                    data.cards.sort((a, b) => (a.nama_wilayah || '').localeCompare(b.nama_wilayah || '', 'id'));
+                    // Kita fetch dulu kode_wilayah dari tabel referensi sesuai level saat ini
+                    let queryLevel = level === 'Nasional' ? 'Provinsi' : (level === 'Provinsi' ? 'Kabupaten/Kota' : 'Kecamatan');
+                    const { data: refData } = await mySupabase.from('referensi_wilayah').select('kode, nama').eq('level_wilayah', queryLevel);
                     
-                    // Logika Hierarki Level Berikutnya
+                    let mapKode = {};
+                    if (refData) {
+                        refData.forEach(r => { mapKode[(r.nama || '').trim().toUpperCase()] = r.kode; });
+                    }
+                    
+                    // Lakukan proses penyusunan (sorting) berdasarkan kode
+                    data.cards.sort((a, b) => {
+                        let namaA = (a.nama_wilayah || '').trim().toUpperCase();
+                        let namaB = (b.nama_wilayah || '').trim().toUpperCase();
+                        let kodeA = mapKode[namaA] || '999999'; // Default ke urutan akhir jika tidak ada kode
+                        let kodeB = mapKode[namaB] || '999999';
+                        return kodeA.localeCompare(kodeB, undefined, { numeric: true });
+                    });
+                    
                     let nextLevel = level === 'Nasional' ? 'Provinsi' : (level === 'Provinsi' ? 'Kabupaten' : 'Kecamatan');
-                    
                     data.cards.forEach(c => {
                         let nama = c.nama_wilayah || 'Lainnya';
                         let action = `onclick="terapkanFilterAdmin('${nextLevel}', '${nama}')"`;
                         if (level === 'Kecamatan') action = `onclick="alert('Kecamatan adalah level filtrasi terdalam saat ini.')"`;
                         
+                        let kodeTampil = mapKode[nama.toUpperCase()] ? `<span style="display:inline-block; font-size:0.75rem; background:#e9ecef; padding:2px 6px; border-radius:4px; color:#495057; margin-bottom:5px;">${mapKode[nama.toUpperCase()]}</span>` : '';
+
                         container.innerHTML += `
                             <div class="card" style="cursor: pointer; border-top: 4px solid #6f42c1; padding: 15px;" ${action}>
+                                ${kodeTampil}
                                 <h3 style="margin: 0 0 10px 0; color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">${nama}</h3>
                                 <p class="angka" style="margin: 0; color: #6f42c1; font-size: 1.6rem; font-weight: bold;">${formatAngka(c.total)}</p>
                             </div>
@@ -254,10 +265,58 @@ async function muatBerandaAdmin(level, wilayah) {
                     container.innerHTML = '<p style="color:var(--text-muted);">Tidak ada data pada level ini.</p>';
                 }
             }
+
+            // ==== 2. LOGIKA MATRIKS BLANK SPOT NASIONAL ====
+            const tbodyBlankSpot = document.getElementById('tbody-blank-spot');
+            if (tbodyBlankSpot && data.blank_spot) {
+                // Referensi Data Master Nasional (Kemendagri standard default)
+                let masterProv = 38;
+                let masterKab = 514;
+                let masterKec = 7277;
+                let masterDesa = 83771;
+                
+                const bs = data.blank_spot;
+                
+                // Helper fungsi rendering baris
+                const renderRow = (tingkat, total, terisi) => {
+                    let blank = total - terisi;
+                    if (blank < 0) blank = 0; 
+                    let persen = total > 0 ? ((terisi / total) * 100).toFixed(2) : 0;
+                    let barColor = persen < 50 ? '#dc3545' : (persen < 80 ? '#ffc107' : '#28a745');
+                    
+                    return `
+                        <tr>
+                            <td style="text-align:left; padding:10px; border:1px solid #dee2e6; font-weight:bold;">${tingkat}</td>
+                            <td style="padding:10px; border:1px solid #dee2e6;">${formatAngka(total)}</td>
+                            <td style="padding:10px; border:1px solid #dee2e6; color:#28a745; font-weight:bold;">${formatAngka(terisi)}</td>
+                            <td style="padding:10px; border:1px solid #dee2e6; color:#dc3545; font-weight:bold;">${formatAngka(blank)}</td>
+                            <td style="padding:10px; border:1px solid #dee2e6;">
+                                <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                                    <span style="width:45px; text-align:right;">${persen}%</span>
+                                    <div style="width: 60px; height: 6px; background:#e9ecef; border-radius:3px; overflow:hidden;">
+                                        <div style="width: ${persen}%; height: 100%; background:${barColor};"></div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                };
+
+                // Hanya tampilkan matriks lengkap ini saat Portal di mode "Nasional"
+                if (level === 'Nasional') {
+                    tbodyBlankSpot.innerHTML = `
+                        ${renderRow('Provinsi', masterProv, bs.terisi_prov)}
+                        ${renderRow('Kabupaten/Kota', masterKab, bs.terisi_kab)}
+                        ${renderRow('Kecamatan', masterKec, bs.terisi_kec)}
+                        ${renderRow('Desa/Kelurahan', masterDesa, bs.terisi_desa)}
+                    `;
+                } else {
+                    tbodyBlankSpot.innerHTML = `<tr><td colspan="5" style="padding:15px; text-align:center; color:#6c757d;">Rincian Data Matriks Blank Spot Nasional hanya tersedia pada cakupan <b>Nasional</b>. Saat ini Anda melihat detail sub-wilayah: ${wilayah}.</td></tr>`;
+                }
+            }
+
         }
-    } catch (e) {
-        console.error("DIAGNOSA ERROR SERVER: ", e);
-    }
+    } catch (e) { console.error("DIAGNOSA ERROR SERVER: ", e); }
 }
 
 async function pulihkanSesi(data) {
@@ -267,13 +326,11 @@ async function pulihkanSesi(data) {
     const vpkb = document.getElementById('view-portal-pkb'); if(vpkb) vpkb.style.display = 'none';
     const vadmin = document.getElementById('view-portal-admin'); if(vadmin) vadmin.style.display = 'none';
 
-    // === LOGIKA JIKA ADMIN ===
     if (data.is_admin || data.level_admin) {
         setTxt('header-title', `Portal Admin: ${data.wilayah_akses} (${data.level_admin})`);
         setTxt('teks-sapaan-admin', `Selamat Datang, ${data.nama_lengkap}`);
         setTxt('teks-wilayah-admin', `Kewenangan Akses Asli: Wilayah ${data.wilayah_akses}`);
         
-        // Simpan State Original & Current
         window.adminOriginal = { level: data.level_admin, wilayah: data.wilayah_akses };
         window.adminCurrent = { level: data.level_admin, wilayah: data.wilayah_akses };
         
@@ -286,7 +343,6 @@ async function pulihkanSesi(data) {
         return; 
     }
 
-    // === LOGIKA JIKA PEGAWAI ===
     const gelarLengkap = (data.gelar_depan ? data.gelar_depan + " " : "") + data.nama_lengkap + (data.gelar_belakang ? ", " + data.gelar_belakang : "");
     const gelarJabatan = data.jabatan + " (" + (data.golongan || '-') + ")";
     
@@ -541,12 +597,9 @@ window.wilayahAdminAktif = '';
 
 async function muatDataAdmin(level, wilayah) {
     window.wilayahAdminAktif = wilayah;
-    
     const thead = document.querySelector('#tabel-admin-pegawai thead');
     const tbody = document.querySelector('#tabel-admin-pegawai tbody');
 
-    // Karena Filter Dinamis, Admin Pusat yang mengklik kartu (turun ke level Provinsi/Kabupaten) 
-    // akan menggunakan logika else (detail/rekap parsial)
     if (level === 'Nasional') {
         const { data, error } = await mySupabase.rpc('get_rekap_pusat');
         if (!error && data) {
@@ -571,7 +624,7 @@ async function muatDataAdmin(level, wilayah) {
             if(tbody) tbody.innerHTML = htmlTable.length ? htmlTable : '<tr><td colspan="6" style="text-align:center;">Tidak ada data rekapitulasi.</td></tr>';
             siapkanUIExportPusat(optionsProv);
         } else {
-            if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Gagal memuat rekapitulasi. Pastikan fungsi SQL get_rekap_pusat sudah dibuat.</td></tr>';
+            if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Gagal memuat rekapitulasi.</td></tr>';
         }
     } else {
         const { data, error } = await mySupabase.rpc('get_data_admin', { p_level: level, p_wilayah: wilayah });
@@ -716,7 +769,7 @@ window.unduhDataAdminPusat = async function(format) {
         prosesUnduhDokumen(mappedData, format, `Pegawai_${prov.replace(/\s+/g, '_')}`);
     } catch (e) {
         console.error(e);
-        alert("Gagal menarik data spesifik wilayah dari server. Periksa koneksi Anda.");
+        alert("Gagal menarik data dari server.");
     } finally {
         if(info) info.style.display = 'none';
     }
