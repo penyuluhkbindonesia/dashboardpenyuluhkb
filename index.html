@@ -93,7 +93,6 @@
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/chart.js@4"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -156,19 +155,42 @@
                 <div id="tab-beranda-admin" class="panel tab-content-admin">
                     <h2 id="teks-sapaan-admin" style="color: #6f42c1; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-wilayah-admin" style="margin-top: 0; color: var(--text-main);">-</h3>
-                    <p style="line-height: 1.6; color: var(--text-muted); margin-top: 15px;">Selamat datang di Ruang Kendali Admin. Anda dapat memantau data agregat, mengevaluasi progres pemutakhiran data, dan mengekspor laporan sesuai dengan wilayah kewenangan Anda.</p>
                     
-                    <div class="kpi-grid" style="margin-top: 25px;">
-                        <div class="card admin-card"><h3>TOTAL PEGAWAI (WILAYAH)</h3><p class="angka" id="adm-kpi-total">0</p></div>
-                        <div class="card success"><h3>SUDAH UPDATE (PROGRES)</h3><p class="angka" id="adm-kpi-update">0</p></div>
+                    <div class="kpi-grid" style="margin-top: 20px;">
+                        <div class="card admin-card"><h3>TOTAL PEGAWAI</h3><p class="angka" id="adm-kpi-total">0</p></div>
+                        <div class="card success"><h3>PROFIL MUTAKHIR</h3><p class="angka" id="adm-kpi-mutakhir" style="color:#28a745;">0</p></div>
+                        <div class="card danger"><h3>BELUM MUTAKHIR</h3><p class="angka" id="adm-kpi-belum" style="color:#dc3545;">0</p></div>
+                        <div class="card"><h3>PNS</h3><p class="angka" id="adm-kpi-pns">0</p></div>
+                        <div class="card"><h3>PPPK</h3><p class="angka" id="adm-kpi-pppk">0</p></div>
+                        <div class="card gender"><h3>MEMILIKI BALAI KB</h3><p class="angka" id="adm-kpi-balai">0</p></div>
+                    </div>
+
+                    <h3 style="color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;">Sebaran Wilayah (Klik untuk Filter Detail)</h3>
+                    <div id="adm-container-cards" style="display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px;">
+                        <p style="color:var(--text-muted);">Memuat sebaran wilayah...</p>
+                    </div>
+
+                    <div class="dua-kolom-grid" style="margin-top: 20px;">
+                        <div class="form-section" style="margin-bottom:0;">
+                            <h3 style="color: #dc3545;">Analisis Blank Spot Binaan</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-muted);">Pemetaan cakupan wilayah binaan vs ketersediaan PKB/PLKB aktif.</p>
+                            <div style="background: var(--bg-primary); padding: 15px; border-radius: 6px; text-align: center; border: 1px dashed #adb5bd;">
+                                <p style="margin:0; font-weight:bold; color: #6c757d;">[Tahap Sinkronisasi dengan Master Data Wilayah Kemendagri]</p>
+                            </div>
+                        </div>
+
+                        <div class="form-section" style="margin-bottom:0;">
+                            <h3 style="color: #fd7e14;">Proyeksi Purna Tugas (2026)</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-muted);">Jumlah PKB/PLKB di wilayah wewenang Anda yang memasuki masa pensiun.</p>
+                            <div style="background: #fff3cd; padding: 20px; border-radius: 6px; text-align: center; border: 1px solid #ffeeba;">
+                                <h1 style="margin:0; color: #856404; font-size: 3rem;" id="adm-kpi-pensiun">0</h1>
+                                <p style="margin:0; color: #856404; font-weight: bold;">Pegawai Memasuki Masa Pensiun</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div id="tab-progres-update" class="panel tab-content-admin" style="display: none;">
-                    <h2 style="color: #6f42c1;">Pantau Progres Update Wilayah</h2>
-                    <p style="color: var(--text-muted);">Halaman ini dalam tahap pengembangan. Nantinya akan menampilkan persentase kepatuhan PKB/PLKB dalam memperbarui profil per wilayah.</p>
-                </div>
-
+                <div id="tab-progres-update" class="panel tab-content-admin" style="display: none;"><h2 style="color: #6f42c1;">Pantau Progres Update</h2><p style="color: var(--text-muted);">Akan difokuskan setelah Beranda sempurna.</p></div>
                 <div id="tab-daftar-pegawai" class="panel tab-content-admin" style="display: none;">
                     <h2 style="color: #6f42c1; border-bottom: 2px solid #eee; padding-bottom: 10px;">Manajemen Daftar Pegawai</h2>
                     <div class="table-responsive" style="max-height: 500px;">
