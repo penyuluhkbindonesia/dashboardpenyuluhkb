@@ -209,10 +209,11 @@ async function muatBerandaAdmin(level, wilayah) {
                 if (data.cards && data.cards.length > 0) {
                     data.cards.forEach(c => {
                         let nama = c.nama_wilayah || 'Lainnya';
+                        // PERBAIKAN: MENGGUNAKAN CLASS card AGAR SERAGAM DAN RAPI
                         container.innerHTML += `
-                            <div style="min-width: 150px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; text-align: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #6f42c1; flex-shrink: 0;" onclick="alert('Menu klik untuk mem-filter ke wilayah ${nama} akan diaktifkan setelah Beranda selesai.')">
-                                <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: var(--text-muted);">${nama}</h4>
-                                <h2 style="margin: 0; color: #6f42c1;">${formatAngka(c.total)}</h2>
+                            <div class="card" style="cursor: pointer; border-top: 4px solid #6f42c1; padding: 15px;" onclick="alert('Menu klik untuk mem-filter ke wilayah ${nama} akan diaktifkan setelah Beranda selesai.')">
+                                <h3 style="margin: 0 0 10px 0; color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">${nama}</h3>
+                                <p class="angka" style="margin: 0; color: #6f42c1; font-size: 1.6rem; font-weight: bold;">${formatAngka(c.total)}</p>
                             </div>
                         `;
                     });
@@ -502,6 +503,7 @@ window.ubahSkalaZoom = function(aksi) { if (aksi === '+') currentZoomLevel += 10
 window.dataPegawaiAdmin = []; 
 window.wilayahAdminAktif = '';
 
+// KAMI PANGKAS LOGIKANYA AGAR TIDAK MENGGANGGU FUNGSI LAIN DARI TABEL DAFTAR PEGAWAI
 async function muatDataAdmin(level, wilayah) {
     window.wilayahAdminAktif = wilayah;
     
@@ -563,6 +565,7 @@ async function muatDataAdmin(level, wilayah) {
     }
 }
 
+// Menyesuaikan UI Tab Ekspor khusus untuk PUSAT (Menambahkan Dropdown Filter)
 function siapkanUIExportPusat(optionsProv) {
     const tabEkspor = document.getElementById('tab-ekspor-data');
     if(!tabEkspor) return;
@@ -593,6 +596,7 @@ function siapkanUIExportPusat(optionsProv) {
     });
 }
 
+// Menyesuaikan UI Tab Ekspor khusus untuk DAERAH (Tanpa Filter)
 function siapkanUIExportDaerah() {
     const tabEkspor = document.getElementById('tab-ekspor-data');
     if(!tabEkspor) return;
