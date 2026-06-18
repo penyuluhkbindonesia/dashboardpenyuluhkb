@@ -5,7 +5,6 @@ const SUPABASE_URL = 'https://cdnqqrjbdhoglvlqbxoq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbnFxcmpiZGhvZ2x2bHFieG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDQ1NDIsImV4cCI6MjA5NjU4MDU0Mn0.dHQbkEIJe5L4bfyJqZkJkXTPX0Abot4GBw7_4O3eNwk';
 const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// KOORDINAT PENYIMPANAN FOTO GRATIS (CLOUDINARY)
 const CLOUDINARY_CLOUD_NAME = 'dfkvczk8b';
 const CLOUDINARY_UPLOAD_PRESET = 'givyqypl'; 
 
@@ -13,6 +12,10 @@ let filterProvinsiAktif = null; let currentZoomLevel = 100;
 let chartProvInstance = null; let chartUmurInstance = null; let chartJabatanInstance = null;
 let chartGenerasiInstance = null; let chartPendidikanInstance = null; let chartGolonganInstance = null;
 let fotoProfilBaruDipilih = false; 
+
+// STATE MANAJEMEN FILTER UNTUK ADMIN
+window.adminOriginal = { level: null, wilayah: null };
+window.adminCurrent = { level: null, wilayah: null };
 
 function formatAngka(angka) { return Number(angka).toLocaleString('id-ID'); }
 function formatTanggalIndo(tglStr) {
@@ -28,7 +31,7 @@ function setTxt(id, txt) { const el = document.getElementById(id); if(el) el.inn
 function setVal(id, val) { const el = document.getElementById(id); if(el) el.value = val; }
 
 // ==========================================================================
-// 2. MESIN DASBOR & VISUALISASI GRAFIK
+// 2. MESIN DASBOR PUBLIK & VISUALISASI GRAFIK
 // ==========================================================================
 async function tarikDataDasbor() {
     const loader = document.getElementById('loading-screen'); if(loader) loader.style.display = 'flex';
@@ -60,7 +63,7 @@ function renderVisualDasbor(ds) {
     if(ds && ds.sebaran_provinsi) gambarChartProvinsi(ds.sebaran_provinsi); if(ds && ds.pendidikan) gambarChartPendidikan(ds.pendidikan); if(ds && ds.golongan) gambarChartGolongan(ds.golongan); if(ds && ds.jabatan) gambarChartJabatan(ds.jabatan); gambarChartUmur(umurCount); gambarChartGenerasi(genCount);
 }
 
-function gambarChartProvinsi(d) { const ctx = document.getElementById('chartProvinsi')?.getContext('2d'); if(!ctx) return; if(chartProvInstance) chartProvInstance.destroy(); const sorted = Object.entries(d).sort((a,b)=>b[1]-a[1]); chartProvInstance = new Chart(ctx, {type:'bar', data:{labels:sorted.map(i=>i[0]), datasets:[{label:'Total', data:sorted.map(i=>i[1]), backgroundColor:'#007bff', borderRadius: 4}]}, options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, onClick:(e, act)=>{if(act.length>0){filterProvinsiAktif=sorted[act[0].index][0]; tarikDataDasbor();}}, plugins:{legend:{display:false}}}});}
+function gambarChartProvinsi(d) { const ctx = document.getElementById('chartProvinsi')?.getContext('2d'); if(!ctx) return; if(chartProvInstance) chartProvInstance.destroy(); const sorted = Object.entries(d).sort((a,b)=>a[0].localeCompare(b[0])); chartProvInstance = new Chart(ctx, {type:'bar', data:{labels:sorted.map(i=>i[0]), datasets:[{label:'Total', data:sorted.map(i=>i[1]), backgroundColor:'#007bff', borderRadius: 4}]}, options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, onClick:(e, act)=>{if(act.length>0){filterProvinsiAktif=sorted[act[0].index][0]; tarikDataDasbor();}}, plugins:{legend:{display:false}}}});}
 function gambarChartUmur(d) { const ctx = document.getElementById('chartUmur')?.getContext('2d'); if(!ctx) return; if(chartUmurInstance) chartUmurInstance.destroy(); chartUmurInstance = new Chart(ctx, {type:'bar', data:{labels:Object.keys(d), datasets:[{data:Object.values(d), backgroundColor:['#007bff','#28a745','#ffc107','#fd7e14','#dc3545'], borderRadius: 4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}});}
 function gambarChartGenerasi(d) { const ctx = document.getElementById('chartGenerasi')?.getContext('2d'); if(!ctx) return; if(chartGenerasiInstance) chartGenerasiInstance.destroy(); chartGenerasiInstance = new Chart(ctx, {type:'pie', data:{labels:Object.keys(d), datasets:[{data:Object.values(d), backgroundColor:['#6f42c1','#17a2b8','#fd7e14','#e83e8c']}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}});}
 function gambarChartJabatan(d) { const ctx = document.getElementById('chartJabatan')?.getContext('2d'); if(!ctx) return; if(chartJabatanInstance) chartJabatanInstance.destroy(); const sorted = Object.entries(d).sort((a,b)=>b[1]-a[1]); chartJabatanInstance = new Chart(ctx, {type:'doughnut', data:{labels:sorted.map(i=>i[0]), datasets:[{data:sorted.map(i=>i[1]), backgroundColor:['#007bff','#17a2b8','#28a745','#ffc107','#dc3545','#6f42c1','#e83e8c','#fd7e14','#20c997','#6c757d']}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{boxWidth:10}}}}});}
@@ -69,7 +72,7 @@ function gambarChartGolongan(d) { const ctx = document.getElementById('chartGolo
 window.resetFilter = function() { filterProvinsiAktif = null; tarikDataDasbor(); };
 
 // ==========================================================================
-// 3. MANAJEMEN SESI & LOGIN (RESEPSIONIS PINTAR)
+// 3. MANAJEMEN SESI & LOGIN
 // ==========================================================================
 window.togglePasswordVisibility = function() {
     const pIn = document.getElementById('inputPass'); const ic = document.getElementById('eye-icon-path'); if(!pIn || !ic) return;
@@ -187,8 +190,29 @@ function setCheckboxes(className, valueString) {
 }
 
 // ==========================================================================
-// PENTING: PENARIKAN DATA DASBOR ADMIN
+// PENTING: PENARIKAN DATA DASBOR ADMIN & FUNGSI FILTER HIERARKIS
 // ==========================================================================
+window.terapkanFilterAdmin = function(targetLevel, targetWilayah) {
+    window.adminCurrent.level = targetLevel;
+    window.adminCurrent.wilayah = targetWilayah;
+    
+    document.getElementById('admin-filter-status').style.display = 'flex';
+    setTxt('label-filter-admin', `${targetWilayah} (${targetLevel})`);
+    
+    muatBerandaAdmin(targetLevel, targetWilayah);
+    muatDataAdmin(targetLevel, targetWilayah);
+};
+
+window.resetFilterAdmin = function() {
+    window.adminCurrent.level = window.adminOriginal.level;
+    window.adminCurrent.wilayah = window.adminOriginal.wilayah;
+    
+    document.getElementById('admin-filter-status').style.display = 'none';
+    
+    muatBerandaAdmin(window.adminOriginal.level, window.adminOriginal.wilayah);
+    muatDataAdmin(window.adminOriginal.level, window.adminOriginal.wilayah);
+};
+
 async function muatBerandaAdmin(level, wilayah) {
     try {
         const { data, error } = await mySupabase.rpc('get_dasbor_admin_v2', { p_level: level, p_wilayah: wilayah });
@@ -207,24 +231,32 @@ async function muatBerandaAdmin(level, wilayah) {
             if (container) {
                 container.innerHTML = '';
                 if (data.cards && data.cards.length > 0) {
+                    
+                    // PERBAIKAN: Mengurutkan kartu sebaran secara Alfabet (A-Z)
+                    data.cards.sort((a, b) => (a.nama_wilayah || '').localeCompare(b.nama_wilayah || '', 'id'));
+                    
+                    // Logika Hierarki Level Berikutnya
+                    let nextLevel = level === 'Nasional' ? 'Provinsi' : (level === 'Provinsi' ? 'Kabupaten' : 'Kecamatan');
+                    
                     data.cards.forEach(c => {
                         let nama = c.nama_wilayah || 'Lainnya';
-                        // PERBAIKAN: MENGGUNAKAN CLASS card AGAR SERAGAM DAN RAPI
+                        let action = `onclick="terapkanFilterAdmin('${nextLevel}', '${nama}')"`;
+                        if (level === 'Kecamatan') action = `onclick="alert('Kecamatan adalah level filtrasi terdalam saat ini.')"`;
+                        
                         container.innerHTML += `
-                            <div class="card" style="cursor: pointer; border-top: 4px solid #6f42c1; padding: 15px;" onclick="alert('Menu klik untuk mem-filter ke wilayah ${nama} akan diaktifkan setelah Beranda selesai.')">
+                            <div class="card" style="cursor: pointer; border-top: 4px solid #6f42c1; padding: 15px;" ${action}>
                                 <h3 style="margin: 0 0 10px 0; color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">${nama}</h3>
                                 <p class="angka" style="margin: 0; color: #6f42c1; font-size: 1.6rem; font-weight: bold;">${formatAngka(c.total)}</p>
                             </div>
                         `;
                     });
                 } else {
-                    container.innerHTML = '<p style="color:var(--text-muted);">Tidak ada persebaran data.</p>';
+                    container.innerHTML = '<p style="color:var(--text-muted);">Tidak ada data pada level ini.</p>';
                 }
             }
         }
     } catch (e) {
         console.error("DIAGNOSA ERROR SERVER: ", e);
-        alert("Gagal memuat dasbor admin. Silakan periksa status pangkalan data di server.");
     }
 }
 
@@ -239,10 +271,14 @@ async function pulihkanSesi(data) {
     if (data.is_admin || data.level_admin) {
         setTxt('header-title', `Portal Admin: ${data.wilayah_akses} (${data.level_admin})`);
         setTxt('teks-sapaan-admin', `Selamat Datang, ${data.nama_lengkap}`);
-        setTxt('teks-wilayah-admin', `Kewenangan Akses: Wilayah ${data.wilayah_akses}`);
+        setTxt('teks-wilayah-admin', `Kewenangan Akses Asli: Wilayah ${data.wilayah_akses}`);
         
-        muatBerandaAdmin(data.level_admin, data.wilayah_akses);
-        muatDataAdmin(data.level_admin, data.wilayah_akses);
+        // Simpan State Original & Current
+        window.adminOriginal = { level: data.level_admin, wilayah: data.wilayah_akses };
+        window.adminCurrent = { level: data.level_admin, wilayah: data.wilayah_akses };
+        
+        muatBerandaAdmin(window.adminCurrent.level, window.adminCurrent.wilayah);
+        muatDataAdmin(window.adminCurrent.level, window.adminCurrent.wilayah);
 
         if(vadmin) vadmin.style.display = 'grid';
         const tabTerakhir = localStorage.getItem('activeTabAdmin') || 'beranda-admin'; 
@@ -503,13 +539,14 @@ window.ubahSkalaZoom = function(aksi) { if (aksi === '+') currentZoomLevel += 10
 window.dataPegawaiAdmin = []; 
 window.wilayahAdminAktif = '';
 
-// KAMI PANGKAS LOGIKANYA AGAR TIDAK MENGGANGGU FUNGSI LAIN DARI TABEL DAFTAR PEGAWAI
 async function muatDataAdmin(level, wilayah) {
     window.wilayahAdminAktif = wilayah;
     
     const thead = document.querySelector('#tabel-admin-pegawai thead');
     const tbody = document.querySelector('#tabel-admin-pegawai tbody');
 
+    // Karena Filter Dinamis, Admin Pusat yang mengklik kartu (turun ke level Provinsi/Kabupaten) 
+    // akan menggunakan logika else (detail/rekap parsial)
     if (level === 'Nasional') {
         const { data, error } = await mySupabase.rpc('get_rekap_pusat');
         if (!error && data) {
@@ -565,7 +602,6 @@ async function muatDataAdmin(level, wilayah) {
     }
 }
 
-// Menyesuaikan UI Tab Ekspor khusus untuk PUSAT (Menambahkan Dropdown Filter)
 function siapkanUIExportPusat(optionsProv) {
     const tabEkspor = document.getElementById('tab-ekspor-data');
     if(!tabEkspor) return;
@@ -596,7 +632,6 @@ function siapkanUIExportPusat(optionsProv) {
     });
 }
 
-// Menyesuaikan UI Tab Ekspor khusus untuk DAERAH (Tanpa Filter)
 function siapkanUIExportDaerah() {
     const tabEkspor = document.getElementById('tab-ekspor-data');
     if(!tabEkspor) return;
