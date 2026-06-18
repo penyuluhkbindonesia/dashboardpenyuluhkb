@@ -17,20 +17,25 @@
         .header { background-color: #0056b3; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .header h1 { margin: 0; font-size: 1.2rem; }
         .btn-login-nav { background-color: white; color: #0056b3; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; width: 100%; box-sizing: border-box; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         
         .cakupan-status { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #28a745; }
         .cakupan-status h2 { margin: 0; font-size: 1.2rem; }
         .btn-reset { background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; display: none; }
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .card { background: var(--bg-card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #0056b3; }
+        
+        /* PERBAIKAN CSS GRID AGAR CARD RAPI DAN TIDAK MEMANJANG HORIZONTAL */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        
+        .card { background: var(--bg-card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #0056b3; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); }
         .card.warning { border-top: 4px solid #ffc107; }
         .card.danger { border-top: 4px solid #dc3545; }
         .card.gender { border-top: 4px solid #17a2b8; }
         .card.success { border-top: 4px solid #28a745; } 
         .card.admin-card { border-top: 4px solid #6f42c1; }
-        .card h3 { margin: 0; color: var(--text-muted); font-size: 0.8rem; font-weight: bold; }
+        .card h3 { margin: 0; color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
         .card .angka { font-size: 1.8rem; font-weight: bold; color: var(--text-main); margin: 10px 0 0 0; }
+        
         .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
         .panel { background: var(--bg-card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
@@ -108,6 +113,7 @@
     </div>
 
     <div class="container">
+        <!-- DASHBOARD PUBLIK -->
         <div id="view-dasbor-publik">
             <div class="cakupan-status"><h2 id="label-cakupan">Data PKB/PLKB : NASIONAL</h2><button id="btn-reset-filter" class="btn-reset" onclick="resetFilter()">Tampilkan Nasional</button></div>
             <div class="kpi-grid">
@@ -129,6 +135,7 @@
             </div>
         </div>
 
+        <!-- PORTAL LOGIN -->
         <div id="view-login" class="login-box">
             <h2>Login Portal</h2>
             <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Gunakan NIP (Pegawai) atau Username (Admin) untuk Masuk.</p>
@@ -142,6 +149,7 @@
             <p id="pesan-error" style="color: red; display: none; text-align: center; font-size: 0.9rem; margin-top: 15px;"></p>
         </div>
 
+        <!-- PORTAL UTAMA INTERNAL ADMIN -->
         <div id="view-portal-admin" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu admin-mode">
@@ -152,10 +160,12 @@
                 </ul>
             </div>
             <div class="portal-viewport">
+                <!-- Tab: Beranda Admin -->
                 <div id="tab-beranda-admin" class="panel tab-content-admin">
                     <h2 id="teks-sapaan-admin" style="color: #6f42c1; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-wilayah-admin" style="margin-top: 0; color: var(--text-main);">-</h3>
                     
+                    <!-- BARIS 1: KPI Agregat Kunci -->
                     <div class="kpi-grid" style="margin-top: 20px;">
                         <div class="card admin-card"><h3>TOTAL PEGAWAI</h3><p class="angka" id="adm-kpi-total">0</p></div>
                         <div class="card success"><h3>PROFIL MUTAKHIR</h3><p class="angka" id="adm-kpi-mutakhir" style="color:#28a745;">0</p></div>
@@ -165,12 +175,16 @@
                         <div class="card gender"><h3>MEMILIKI BALAI KB</h3><p class="angka" id="adm-kpi-balai">0</p></div>
                     </div>
 
+                    <!-- BARIS 2: Filter Wilayah Dinamis (Cards) -->
                     <h3 style="color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;">Sebaran Wilayah (Klik untuk Filter Detail)</h3>
-                    <div id="adm-container-cards" style="display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px;">
+                    
+                    <!-- PERBAIKAN: MENGGUNAKAN CLASS kpi-grid AGAR KARTU TURUN KE BAWAH SECARA RAPI -->
+                    <div id="adm-container-cards" class="kpi-grid">
                         <p style="color:var(--text-muted);">Memuat sebaran wilayah...</p>
                     </div>
 
                     <div class="dua-kolom-grid" style="margin-top: 20px;">
+                        <!-- BARIS 3: Blank Spot / Sebaran Area -->
                         <div class="form-section" style="margin-bottom:0;">
                             <h3 style="color: #dc3545;">Analisis Blank Spot Binaan</h3>
                             <p style="font-size: 0.9rem; color: var(--text-muted);">Pemetaan cakupan wilayah binaan vs ketersediaan PKB/PLKB aktif.</p>
@@ -179,6 +193,7 @@
                             </div>
                         </div>
 
+                        <!-- BARIS 4: Pensiun 2026 -->
                         <div class="form-section" style="margin-bottom:0;">
                             <h3 style="color: #fd7e14;">Proyeksi Purna Tugas (2026)</h3>
                             <p style="font-size: 0.9rem; color: var(--text-muted);">Jumlah PKB/PLKB di wilayah wewenang Anda yang memasuki masa pensiun.</p>
@@ -226,6 +241,7 @@
             </div>
         </div>
 
+        <!-- PORTAL UTAMA INTERNAL PEGAWAI -->
         <div id="view-portal-pkb" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu">
@@ -239,6 +255,7 @@
             </div>
 
             <div class="portal-viewport">
+                <!-- Tab: Beranda Pegawai -->
                 <div id="tab-beranda" class="panel tab-content">
                     <h2 id="teks-sapaan" style="color: #0056b3; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-sambutan" style="margin-top: 0; color: var(--text-main);">Selamat Datang di Portal PenyuluhKB Indonesia</h3>
@@ -262,6 +279,7 @@
                     </div>
                 </div>
 
+                <!-- Tab: Profil Pegawai -->
                 <div id="tab-profil" class="panel tab-content" style="display: none;">
                     <div id="view-profil-utama">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">
@@ -314,6 +332,7 @@
                         <button class="btn-primary" style="background-color: #007bff; padding: 12px; font-size: 1rem;" onclick="bukaFormEditProfil()">Ubah / Update Profil</button>
                     </div>
 
+                    <!-- FORMULIR UPDATE PROFIL -->
                     <div id="form-edit-profil" style="display: none;">
                         <h2 style="color: #0056b3; border-bottom: 2px solid #0056b3;">Formulir Update Profil</h2>
                         
