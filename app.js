@@ -187,7 +187,7 @@ function setCheckboxes(className, valueString) {
 }
 
 // ==========================================================================
-// PENTING: PENARIKAN DATA DASBOR ADMIN (YANG SEMPAT TERPUTUS)
+// PENTING: PENARIKAN DATA DASBOR ADMIN
 // ==========================================================================
 async function muatBerandaAdmin(level, wilayah) {
     try {
@@ -222,8 +222,8 @@ async function muatBerandaAdmin(level, wilayah) {
             }
         }
     } catch (e) {
-        console.error(e);
-        alert("Gagal memuat dasbor admin. Periksa skrip SQL di server.");
+        console.error("DIAGNOSA ERROR SERVER: ", e);
+        alert("Gagal memuat dasbor admin. Silakan periksa status pangkalan data di server.");
     }
 }
 
@@ -240,10 +240,8 @@ async function pulihkanSesi(data) {
         setTxt('teks-sapaan-admin', `Selamat Datang, ${data.nama_lengkap}`);
         setTxt('teks-wilayah-admin', `Kewenangan Akses: Wilayah ${data.wilayah_akses}`);
         
-        // ---- INILAH KABEL YANG KITA COLOKKAN KEMBALI ----
         muatBerandaAdmin(data.level_admin, data.wilayah_akses);
         muatDataAdmin(data.level_admin, data.wilayah_akses);
-        // -------------------------------------------------
 
         if(vadmin) vadmin.style.display = 'grid';
         const tabTerakhir = localStorage.getItem('activeTabAdmin') || 'beranda-admin'; 
@@ -504,7 +502,6 @@ window.ubahSkalaZoom = function(aksi) { if (aksi === '+') currentZoomLevel += 10
 window.dataPegawaiAdmin = []; 
 window.wilayahAdminAktif = '';
 
-// KAMI PANGKAS LOGIKANYA AGAR TIDAK MENGGANGGU FUNGSI LAIN DARI TABEL DAFTAR PEGAWAI
 async function muatDataAdmin(level, wilayah) {
     window.wilayahAdminAktif = wilayah;
     
@@ -566,7 +563,6 @@ async function muatDataAdmin(level, wilayah) {
     }
 }
 
-// Menyesuaikan UI Tab Ekspor khusus untuk PUSAT (Menambahkan Dropdown Filter)
 function siapkanUIExportPusat(optionsProv) {
     const tabEkspor = document.getElementById('tab-ekspor-data');
     if(!tabEkspor) return;
@@ -597,7 +593,6 @@ function siapkanUIExportPusat(optionsProv) {
     });
 }
 
-// Menyesuaikan UI Tab Ekspor khusus untuk DAERAH (Tanpa Filter)
 function siapkanUIExportDaerah() {
     const tabEkspor = document.getElementById('tab-ekspor-data');
     if(!tabEkspor) return;
@@ -615,7 +610,6 @@ function siapkanUIExportDaerah() {
     `;
 }
 
-// Helper Utama Pembuat File Ekspor (CSV/Excel/PDF)
 function prosesUnduhDokumen(dataArr, format, filenamePrefix) {
     if(!dataArr || dataArr.length === 0) { alert("Tidak ada data untuk diekspor."); return; }
     const filename = `${filenamePrefix}_${new Date().getTime()}`;
@@ -674,7 +668,6 @@ window.unduhDataAdminPusat = async function(format) {
             
         if(error) throw error;
         
-        // Konversi kolom status_perkawinan ke standar status_update untuk prosesUnduhDokumen
         const mappedData = data.map(d => ({
             nip: d.nip, nama_lengkap: d.nama_lengkap, provinsi: d.provinsi, 
             kabupaten: d.kabupaten, jabatan: d.jabatan, 
