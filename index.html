@@ -11,8 +11,10 @@
         
         html, body { height: 100%; margin: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-primary); color: var(--text-main); font-size: var(--base-font-size); transition: background 0.3s, color 0.3s; display: flex; flex-direction: column; }
-        .main-content { flex: 1 0 auto; padding-bottom: 40px; }
-        .footer { flex-shrink: 0; background-color: #0056b3; color: white; text-align: center; padding: 12px; font-size: 0.9rem; width: 100%; box-sizing: border-box; box-shadow: 0 -2px 4px rgba(0,0,0,0.05); }
+        .main-content { flex: 1 0 auto; padding-bottom: 20px; }
+        
+        /* PERBAIKAN: FOOTER MENJADI STICKY DI BAWAH LAYAR */
+        .footer { flex-shrink: 0; background-color: #0056b3; color: white; text-align: center; padding: 12px; font-size: 0.9rem; width: 100%; box-sizing: border-box; box-shadow: 0 -2px 4px rgba(0,0,0,0.05); position: sticky; bottom: 0; z-index: 1000; }
 
         .header { background-color: #0056b3; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .header h1 { margin: 0; font-size: 1.2rem; }
@@ -23,9 +25,7 @@
         .cakupan-status h2 { margin: 0; font-size: 1.2rem; }
         .btn-reset { background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; display: none; }
         
-        /* PERBAIKAN CSS GRID AGAR CARD RAPI DAN TIDAK MEMANJANG HORIZONTAL */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        
         .card { background: var(--bg-card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #0056b3; transition: transform 0.2s; }
         .card:hover { transform: translateY(-3px); }
         .card.warning { border-top: 4px solid #ffc107; }
@@ -56,12 +56,10 @@
         
         .portal-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; display: none; }
         @media (max-width: 768px) { .portal-layout { grid-template-columns: 1fr; } }
-        .sidebar { background: var(--bg-card); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: fit-content; }
+        .sidebar { background: var(--bg-card); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: fit-content; position: sticky; top: 80px; }
         .sidebar-menu { list-style: none; padding: 0; margin: 0; }
         .sidebar-menu li { padding: 12px 15px; margin-bottom: 5px; border-radius: 4px; cursor: pointer; font-weight: bold; color: var(--text-muted); transition: background-color 0.2s, color 0.2s; display: block; }
         .sidebar-menu li:hover, .sidebar-menu li.active { background: #0056b3; color: white; }
-        
-        /* Tema Khusus Menu Admin */
         .sidebar-menu.admin-mode li:hover, .sidebar-menu.admin-mode li.active { background: #6f42c1; color: white; }
 
         .dua-kolom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -113,7 +111,6 @@
     </div>
 
     <div class="container">
-        <!-- DASHBOARD PUBLIK -->
         <div id="view-dasbor-publik">
             <div class="cakupan-status"><h2 id="label-cakupan">Data PKB/PLKB : NASIONAL</h2><button id="btn-reset-filter" class="btn-reset" onclick="resetFilter()">Tampilkan Nasional</button></div>
             <div class="kpi-grid">
@@ -135,7 +132,6 @@
             </div>
         </div>
 
-        <!-- PORTAL LOGIN -->
         <div id="view-login" class="login-box">
             <h2>Login Portal</h2>
             <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Gunakan NIP (Pegawai) atau Username (Admin) untuk Masuk.</p>
@@ -149,7 +145,6 @@
             <p id="pesan-error" style="color: red; display: none; text-align: center; font-size: 0.9rem; margin-top: 15px;"></p>
         </div>
 
-        <!-- PORTAL UTAMA INTERNAL ADMIN -->
         <div id="view-portal-admin" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu admin-mode">
@@ -160,12 +155,15 @@
                 </ul>
             </div>
             <div class="portal-viewport">
-                <!-- Tab: Beranda Admin -->
                 <div id="tab-beranda-admin" class="panel tab-content-admin">
                     <h2 id="teks-sapaan-admin" style="color: #6f42c1; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-wilayah-admin" style="margin-top: 0; color: var(--text-main);">-</h3>
                     
-                    <!-- BARIS 1: KPI Agregat Kunci -->
+                    <div id="admin-filter-status" style="display: none; justify-content: space-between; align-items: center; background: #f8d7da; padding: 12px 15px; border-radius: 6px; border-left: 4px solid #dc3545; margin-top: 15px;">
+                        <p style="margin: 0; font-weight: bold; color: #721c24;">Menampilkan Detail: <span id="label-filter-admin">-</span></p>
+                        <button class="btn-primary" style="margin: 0; width: auto; padding: 6px 15px; background: #c82333;" onclick="resetFilterAdmin()">Tutup Detail</button>
+                    </div>
+
                     <div class="kpi-grid" style="margin-top: 20px;">
                         <div class="card admin-card"><h3>TOTAL PEGAWAI</h3><p class="angka" id="adm-kpi-total">0</p></div>
                         <div class="card success"><h3>PROFIL MUTAKHIR</h3><p class="angka" id="adm-kpi-mutakhir" style="color:#28a745;">0</p></div>
@@ -175,16 +173,12 @@
                         <div class="card gender"><h3>MEMILIKI BALAI KB</h3><p class="angka" id="adm-kpi-balai">0</p></div>
                     </div>
 
-                    <!-- BARIS 2: Filter Wilayah Dinamis (Cards) -->
-                    <h3 style="color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;">Sebaran Wilayah (Klik untuk Filter Detail)</h3>
-                    
-                    <!-- PERBAIKAN: MENGGUNAKAN CLASS kpi-grid AGAR KARTU TURUN KE BAWAH SECARA RAPI -->
+                    <h3 style="color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;">Sebaran Wilayah (Klik untuk Menampilkan Detail)</h3>
                     <div id="adm-container-cards" class="kpi-grid">
                         <p style="color:var(--text-muted);">Memuat sebaran wilayah...</p>
                     </div>
 
                     <div class="dua-kolom-grid" style="margin-top: 20px;">
-                        <!-- BARIS 3: Blank Spot / Sebaran Area -->
                         <div class="form-section" style="margin-bottom:0;">
                             <h3 style="color: #dc3545;">Analisis Blank Spot Binaan</h3>
                             <p style="font-size: 0.9rem; color: var(--text-muted);">Pemetaan cakupan wilayah binaan vs ketersediaan PKB/PLKB aktif.</p>
@@ -193,10 +187,9 @@
                             </div>
                         </div>
 
-                        <!-- BARIS 4: Pensiun 2026 -->
                         <div class="form-section" style="margin-bottom:0;">
                             <h3 style="color: #fd7e14;">Proyeksi Purna Tugas (2026)</h3>
-                            <p style="font-size: 0.9rem; color: var(--text-muted);">Jumlah PKB/PLKB di wilayah wewenang Anda yang memasuki masa pensiun.</p>
+                            <p style="font-size: 0.9rem; color: var(--text-muted);">Jumlah PKB/PLKB di wilayah yang ditampilkan yang memasuki masa pensiun.</p>
                             <div style="background: #fff3cd; padding: 20px; border-radius: 6px; text-align: center; border: 1px solid #ffeeba;">
                                 <h1 style="margin:0; color: #856404; font-size: 3rem;" id="adm-kpi-pensiun">0</h1>
                                 <p style="margin:0; color: #856404; font-weight: bold;">Pegawai Memasuki Masa Pensiun</p>
@@ -220,7 +213,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -241,7 +234,6 @@
             </div>
         </div>
 
-        <!-- PORTAL UTAMA INTERNAL PEGAWAI -->
         <div id="view-portal-pkb" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu">
@@ -255,7 +247,6 @@
             </div>
 
             <div class="portal-viewport">
-                <!-- Tab: Beranda Pegawai -->
                 <div id="tab-beranda" class="panel tab-content">
                     <h2 id="teks-sapaan" style="color: #0056b3; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-sambutan" style="margin-top: 0; color: var(--text-main);">Selamat Datang di Portal PenyuluhKB Indonesia</h3>
@@ -279,7 +270,6 @@
                     </div>
                 </div>
 
-                <!-- Tab: Profil Pegawai -->
                 <div id="tab-profil" class="panel tab-content" style="display: none;">
                     <div id="view-profil-utama">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">
@@ -332,7 +322,6 @@
                         <button class="btn-primary" style="background-color: #007bff; padding: 12px; font-size: 1rem;" onclick="bukaFormEditProfil()">Ubah / Update Profil</button>
                     </div>
 
-                    <!-- FORMULIR UPDATE PROFIL -->
                     <div id="form-edit-profil" style="display: none;">
                         <h2 style="color: #0056b3; border-bottom: 2px solid #0056b3;">Formulir Update Profil</h2>
                         
