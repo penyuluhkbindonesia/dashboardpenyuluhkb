@@ -15,15 +15,16 @@
         
         .footer { flex-shrink: 0; background-color: #0056b3; color: white; text-align: center; padding: 12px; font-size: 0.9rem; width: 100%; box-sizing: border-box; box-shadow: 0 -2px 4px rgba(0,0,0,0.05); position: sticky; bottom: 0; z-index: 1000; }
 
-        .header { background-color: #0056b3; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header { background-color: #0056b3; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-wrap: wrap; gap: 10px; }
         .header h1 { margin: 0; font-size: 1.2rem; }
-        .btn-login-nav { background-color: white; color: #0056b3; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-login-nav { background-color: white; color: #0056b3; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; }
         .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         
-        .cakupan-status { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #28a745; }
+        .cakupan-status { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #28a745; flex-wrap: wrap; gap: 10px; }
         .cakupan-status h2 { margin: 0; font-size: 1.2rem; }
         .btn-reset { background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; display: none; }
         
+        /* Grid yang adaptif untuk kartu */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .card { background: var(--bg-card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #0056b3; transition: transform 0.2s; }
         .card:hover { transform: translateY(-3px); }
@@ -37,13 +38,13 @@
         
         .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
-        .panel { background: var(--bg-card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .panel { background: var(--bg-card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
         .panel h2 { margin-top: 0; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; color: var(--text-main); }
         .canvas-container { position: relative; height: 320px; width: 100%; }
         .scrollable-panel { overflow-y: auto; max-height: 320px; border: 1px solid var(--border-color); border-radius: 4px; }
         .canvas-container-tall { position: relative; height: 1000px; width: 100%; }
         
-        .login-box { background: var(--bg-card); padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; display: none; }
+        .login-box { background: var(--bg-card); padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; display: none; width: 90%; }
         .login-box h2 { margin-top: 0; text-align: center; font-size: 1.5rem; }
         input[type="text"], input[type="password"], input[type="date"], input[type="number"], select, textarea { width: 100%; padding: 10px; margin: 8px 0 15px 0; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); box-sizing: border-box; font-family: inherit; font-size: 1rem; }
         input[readonly] { background-color: var(--bg-primary); cursor: not-allowed; }
@@ -53,8 +54,15 @@
         .password-wrapper input { padding-right: 40px; }
         .password-wrapper .toggle-icon { position: absolute; right: 12px; top: 40%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); width: 20px; height: 20px; }
         
+        /* Layout Portal yang Responsif untuk Mobile */
         .portal-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; display: none; }
-        @media (max-width: 768px) { .portal-layout { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { 
+            .portal-layout { grid-template-columns: 1fr; display: flex; flex-direction: column; } 
+            .sidebar { position: static !important; z-index: 1; margin-bottom: 15px; }
+            .sidebar-menu { display: flex; flex-wrap: wrap; gap: 5px; }
+            .sidebar-menu li { flex: 1 1 calc(50% - 5px); text-align: center; font-size: 0.9rem; padding: 10px; }
+        }
+        
         .sidebar { background: var(--bg-card); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: fit-content; position: sticky; top: 80px; }
         .sidebar-menu { list-style: none; padding: 0; margin: 0; }
         .sidebar-menu li { padding: 12px 15px; margin-bottom: 5px; border-radius: 4px; cursor: pointer; font-weight: bold; color: var(--text-muted); transition: background-color 0.2s, color 0.2s; display: block; }
@@ -64,11 +72,18 @@
         .dua-kolom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .tiga-kolom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
         .empat-kolom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
-        @media (max-width: 900px) { .empat-kolom-grid, .tiga-kolom-grid { grid-template-columns: 1fr 1fr; } .dua-kolom-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { 
+            .empat-kolom-grid, .tiga-kolom-grid { grid-template-columns: 1fr 1fr; } 
+            .dua-kolom-grid { grid-template-columns: 1fr; } 
+        }
+        @media (max-width: 480px) {
+            .empat-kolom-grid, .tiga-kolom-grid { grid-template-columns: 1fr; }
+        }
+
         .avatar-container { text-align: center; margin-bottom: 20px; position: relative; }
         .avatar-img { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 4px solid #0056b3; background: #eee; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .form-section { border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-bottom: 25px; background: var(--bg-card); }
-        .form-section h3 { margin-top: 0; color: #0056b3; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; font-size: 1.1rem; }
+        .form-section { border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-bottom: 25px; background: var(--bg-card); overflow: hidden; }
+        .form-section h3 { margin-top: 0; color: #0056b3; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; font-size: 1.1rem; word-wrap: break-word; }
         .form-label { font-size: 0.95rem; font-weight: bold; display: block; color: var(--text-main); }
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-top: 5px; margin-bottom: 15px; }
         .checkbox-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.95rem; }
@@ -77,8 +92,10 @@
         .daftar-item-klik { list-style: none; padding: 0; margin: 0; }
         .daftar-item-klik li { padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; color: #0056b3; font-weight: 500; font-size: 0.95rem; }
         .daftar-item-klik li:hover { text-decoration: underline; background: rgba(0,86,179,0.05); }
-        .table-responsive { overflow-x: auto; max-height: 500px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; color: var(--text-main); }
+        
+        /* Tabel Responsif untuk Mobile */
+        .table-responsive { overflow-x: auto; max-height: 500px; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; color: var(--text-main); min-width: 600px; }
         th, td { border-bottom: 1px solid var(--border-color); padding: 12px; text-align: left; }
         th { background-color: var(--bg-primary); position: sticky; top: 0; z-index: 10;}
         
@@ -156,11 +173,11 @@
             <div class="portal-viewport">
                 <div id="tab-beranda-admin" class="panel tab-content-admin">
                     <h2 id="teks-sapaan-admin" style="color: #6f42c1; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
-                    <h3 id="teks-wilayah-admin" style="margin-top: 0; color: var(--text-main);">-</h3>
+                    <h3 id="teks-wilayah-admin" style="margin-top: 0; color: var(--text-main); font-weight: normal;">-</h3>
                     
-                    <div id="admin-filter-status" style="display: none; justify-content: space-between; align-items: center; background: #f8d7da; padding: 12px 15px; border-radius: 6px; border-left: 4px solid #dc3545; margin-top: 15px;">
+                    <div id="admin-filter-status" style="display: none; justify-content: space-between; align-items: center; background: #f8d7da; padding: 12px 15px; border-radius: 6px; border-left: 4px solid #dc3545; margin-top: 15px; flex-wrap: wrap; gap: 10px;">
                         <p style="margin: 0; font-weight: bold; color: #721c24;">Menampilkan Detail: <span id="label-filter-admin">-</span></p>
-                        <button class="btn-primary" style="margin: 0; width: auto; padding: 6px 15px; background: #c82333;" onclick="resetFilterAdmin()">Tutup Detail (Kembali)</button>
+                        <button class="btn-primary" style="margin: 0; width: auto; padding: 6px 15px; background: #c82333; white-space: nowrap;" onclick="resetFilterAdmin()">Tutup Detail (Kembali)</button>
                     </div>
 
                     <div class="kpi-grid" style="margin-top: 20px;">
@@ -177,17 +194,17 @@
                         <p style="color:var(--text-muted);">Memuat sebaran wilayah...</p>
                     </div>
 
-                    <div class="form-section" style="margin-top:20px;">
-                        <h3 style="color: #dc3545; margin-bottom: 5px;">Analisis Blank Spot Binaan</h3>
-                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">Matriks perbandingan Total Wilayah Nasional Kemendagri melawan Ketersediaan PKB/PLKB Aktif.</p>
+                    <div class="form-section" style="margin-top:20px; overflow-x: auto;">
+                        <h3 style="color: #dc3545; margin-bottom: 5px;">Analisis Wilayah Binaan PKB/PLKB</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">Matriks perbandingan Total Wilayah Nasional Kemendagri dengan Ketersediaan PKB/PLKB Aktif.</p>
                         <div class="table-responsive">
-                            <table class="table table-bordered mb-0 text-center" style="width:100%; border-collapse:collapse;">
+                            <table class="table table-bordered mb-0 text-center" style="width:100%; border-collapse:collapse; min-width: 600px;">
                                 <thead style="background:#f8f9fa;">
                                     <tr>
                                         <th style="text-align:left; padding:10px; border:1px solid #dee2e6;">Tingkat Wilayah</th>
-                                        <th style="padding:10px; border:1px solid #dee2e6;">Total Master Nasional</th>
+                                        <th style="padding:10px; border:1px solid #dee2e6;" id="header-matriks-total">Total Wilayah Nasional</th>
                                         <th style="padding:10px; border:1px solid #dee2e6; color:#28a745;">Wilayah Terisi</th>
-                                        <th style="padding:10px; border:1px solid #dee2e6; color:#dc3545;">Blank Spot (Kosong)</th>
+                                        <th style="padding:10px; border:1px solid #dee2e6; color:#dc3545;" id="header-matriks-kosong">Wilayah Kosong (tanpa PKB/PLKB)</th>
                                         <th style="padding:10px; border:1px solid #dee2e6;">Persentase Cakupan</th>
                                     </tr>
                                 </thead>
