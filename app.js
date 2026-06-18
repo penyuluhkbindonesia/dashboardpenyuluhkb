@@ -186,6 +186,47 @@ function setCheckboxes(className, valueString) {
     if(valueString) { const values = valueString.split(',').map(v => v.trim()); document.querySelectorAll('.' + className).forEach(el => { if(values.includes(el.value)) el.checked = true; }); }
 }
 
+// ==========================================================================
+// PENTING: PENARIKAN DATA DASBOR ADMIN (YANG SEMPAT TERPUTUS)
+// ==========================================================================
+async function muatBerandaAdmin(level, wilayah) {
+    try {
+        const { data, error } = await mySupabase.rpc('get_dasbor_admin_v2', { p_level: level, p_wilayah: wilayah });
+        if (error) throw error;
+
+        if (data) {
+            setTxt('adm-kpi-total', formatAngka(data.kpi.total));
+            setTxt('adm-kpi-mutakhir', formatAngka(data.kpi.mutakhir));
+            setTxt('adm-kpi-belum', formatAngka(data.kpi.belum_mutakhir));
+            setTxt('adm-kpi-pns', formatAngka(data.kpi.pns));
+            setTxt('adm-kpi-pppk', formatAngka(data.kpi.pppk));
+            setTxt('adm-kpi-balai', formatAngka(data.kpi.punya_balai));
+            setTxt('adm-kpi-pensiun', formatAngka(data.pensiun_2026));
+
+            const container = document.getElementById('adm-container-cards');
+            if (container) {
+                container.innerHTML = '';
+                if (data.cards && data.cards.length > 0) {
+                    data.cards.forEach(c => {
+                        let nama = c.nama_wilayah || 'Lainnya';
+                        container.innerHTML += `
+                            <div style="min-width: 150px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; text-align: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #6f42c1; flex-shrink: 0;" onclick="alert('Menu klik untuk mem-filter ke wilayah ${nama} akan diaktifkan setelah Beranda selesai.')">
+                                <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: var(--text-muted);">${nama}</h4>
+                                <h2 style="margin: 0; color: #6f42c1;">${formatAngka(c.total)}</h2>
+                            </div>
+                        `;
+                    });
+                } else {
+                    container.innerHTML = '<p style="color:var(--text-muted);">Tidak ada persebaran data.</p>';
+                }
+            }
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Gagal memuat dasbor admin. Periksa skrip SQL di server.");
+    }
+}
+
 async function pulihkanSesi(data) {
     const vl = document.getElementById('view-login'); if(vl) vl.style.display = 'none'; 
     const vdp = document.getElementById('view-dasbor-publik'); if(vdp) vdp.style.display = 'none';
@@ -199,7 +240,10 @@ async function pulihkanSesi(data) {
         setTxt('teks-sapaan-admin', `Selamat Datang, ${data.nama_lengkap}`);
         setTxt('teks-wilayah-admin', `Kewenangan Akses: Wilayah ${data.wilayah_akses}`);
         
+        // ---- INILAH KABEL YANG KITA COLOKKAN KEMBALI ----
+        muatBerandaAdmin(data.level_admin, data.wilayah_akses);
         muatDataAdmin(data.level_admin, data.wilayah_akses);
+        // -------------------------------------------------
 
         if(vadmin) vadmin.style.display = 'grid';
         const tabTerakhir = localStorage.getItem('activeTabAdmin') || 'beranda-admin'; 
@@ -460,29 +504,23 @@ window.ubahSkalaZoom = function(aksi) { if (aksi === '+') currentZoomLevel += 10
 window.dataPegawaiAdmin = []; 
 window.wilayahAdminAktif = '';
 
+// KAMI PANGKAS LOGIKANYA AGAR TIDAK MENGGANGGU FUNGSI LAIN DARI TABEL DAFTAR PEGAWAI
 async function muatDataAdmin(level, wilayah) {
     window.wilayahAdminAktif = wilayah;
-    setTxt('adm-kpi-total', 'Memuat...'); setTxt('adm-kpi-update', 'Memuat...');
     
     const thead = document.querySelector('#tabel-admin-pegawai thead');
     const tbody = document.querySelector('#tabel-admin-pegawai tbody');
 
     if (level === 'Nasional') {
-        // === LOGIKA ADMIN PUSAT (TABEL REKAPITULASI) ===
         const { data, error } = await mySupabase.rpc('get_rekap_pusat');
-        
         if (!error && data) {
-            let totPegawai = 0; let totUpdate = 0;
             let htmlTable = '';
             let optionsProv = '<option value="">-- Pilih Provinsi --</option>';
 
             if(thead) thead.innerHTML = `<tr><th>No</th><th>Nama Provinsi</th><th style="text-align:center;">Total Pegawai</th><th style="text-align:center;">Sudah Update</th><th style="text-align:center;">Belum Update</th><th style="text-align:center;">Capaian</th></tr>`;
             
             data.forEach((row, i) => {
-                totPegawai += Number(row.total_pegawai);
-                totUpdate += Number(row.sudah_update);
                 let warna = row.persentase >= 80 ? '#28a745' : (row.persentase >= 50 ? '#ffc107' : '#dc3545');
-                
                 htmlTable += `<tr>
                     <td>${i+1}</td>
                     <td style="font-weight:bold; color:#0056b3;">${row.nama_wilayah}</td>
@@ -495,21 +533,13 @@ async function muatDataAdmin(level, wilayah) {
             });
             
             if(tbody) tbody.innerHTML = htmlTable.length ? htmlTable : '<tr><td colspan="6" style="text-align:center;">Tidak ada data rekapitulasi.</td></tr>';
-            setTxt('adm-kpi-total', formatAngka(totPegawai));
-            setTxt('adm-kpi-update', formatAngka(totUpdate));
-            
             siapkanUIExportPusat(optionsProv);
         } else {
-            setTxt('adm-kpi-total', '0'); setTxt('adm-kpi-update', '0');
             if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Gagal memuat rekapitulasi. Pastikan fungsi SQL get_rekap_pusat sudah dibuat.</td></tr>';
         }
     } else {
-        // === LOGIKA ADMIN DAERAH (TABEL DETAIL) ===
         const { data, error } = await mySupabase.rpc('get_data_admin', { p_level: level, p_wilayah: wilayah });
-        
         if (!error && data) {
-            setTxt('adm-kpi-total', formatAngka(data.kpi.total));
-            setTxt('adm-kpi-update', formatAngka(data.kpi.updated));
             window.dataPegawaiAdmin = data.pegawai || [];
             
             if(thead) thead.innerHTML = `<tr><th>NIP</th><th>Nama Lengkap</th><th>Kabupaten/Kota</th><th>Jabatan</th><th>Status Data</th></tr>`;
