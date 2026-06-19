@@ -9,11 +9,12 @@
         :root { --bg-primary: #f0f2f5; --bg-card: #ffffff; --text-main: #333333; --text-muted: #6c757d; --border-color: #dee2e6; --base-font-size: 100%; }
         [data-theme="dark"] { --bg-primary: #1a1a1a; --bg-card: #2d2d2d; --text-main: #ffffff; --text-muted: #b0b0b0; --border-color: #404040; }
         
-        html, body { height: 100%; margin: 0; }
+        /* FIX FOOTER: Memastikan body memenuhi 100% tinggi layar dan main-content mendorong footer ke bawah */
+        html, body { min-height: 100vh; margin: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-primary); color: var(--text-main); font-size: var(--base-font-size); transition: background 0.3s, color 0.3s; display: flex; flex-direction: column; }
-        .main-content { flex: 1 0 auto; padding-bottom: 20px; }
+        .main-content { flex-grow: 1; padding-bottom: 20px; width: 100%; box-sizing: border-box; }
         
-        .footer { flex-shrink: 0; background-color: #0056b3; color: white; text-align: center; padding: 12px; font-size: 0.9rem; width: 100%; box-sizing: border-box; box-shadow: 0 -2px 4px rgba(0,0,0,0.05); position: sticky; bottom: 0; z-index: 1000; }
+        .footer { background-color: #0056b3; color: white; text-align: center; padding: 12px; font-size: 0.9rem; width: 100%; box-sizing: border-box; box-shadow: 0 -2px 4px rgba(0,0,0,0.05); }
 
         .header { background-color: #0056b3; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-wrap: wrap; gap: 10px; }
         .header h1 { margin: 0; font-size: 1.2rem; }
@@ -44,11 +45,12 @@
         .scrollable-panel { overflow-y: auto; max-height: 320px; border: 1px solid var(--border-color); border-radius: 4px; }
         .canvas-container-tall { position: relative; height: 1000px; width: 100%; }
         
-        .login-box { background: var(--bg-card); padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; display: none; width: 90%; }
+        .login-box { background: var(--bg-card); padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; display: none; width: 90%; box-sizing: border-box; }
         .login-box h2 { margin-top: 0; text-align: center; font-size: 1.5rem; }
         input[type="text"], input[type="password"], input[type="date"], input[type="number"], select, textarea { width: 100%; padding: 10px; margin: 8px 0 15px 0; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); box-sizing: border-box; font-family: inherit; font-size: 1rem; }
         input[readonly] { background-color: var(--bg-primary); cursor: not-allowed; }
         .btn-primary { background-color: #007bff; color: white; border: none; padding: 10px; cursor: pointer; font-weight: bold; width: 100%; border-radius: 4px; margin-top: 10px; font-size: 1rem; }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-batal { background-color: transparent; color: var(--text-muted); border: none; cursor: pointer; text-decoration: underline; width: 100%; margin-top: 10px; font-size: 1rem; }
         .password-wrapper { position: relative; width: 100%; }
         .password-wrapper input { padding-right: 40px; }
@@ -93,7 +95,7 @@
         .daftar-item-klik li { padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; color: #0056b3; font-weight: 500; font-size: 0.95rem; }
         .daftar-item-klik li:hover { text-decoration: underline; background: rgba(0,86,179,0.05); }
         
-        /* Tabel Responsif untuk Mobile */
+        /* Tabel Responsif */
         .table-responsive { overflow-x: auto; max-height: 500px; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; font-size: 0.95rem; color: var(--text-main); min-width: 600px; }
         th, td { border-bottom: 1px solid var(--border-color); padding: 12px; text-align: left; }
@@ -127,6 +129,7 @@
     </div>
 
     <div class="container">
+        <!-- DASBOR PUBLIK -->
         <div id="view-dasbor-publik">
             <div class="cakupan-status"><h2 id="label-cakupan">Data PKB/PLKB : NASIONAL</h2><button id="btn-reset-filter" class="btn-reset" onclick="resetFilter()">Tampilkan Nasional</button></div>
             <div class="kpi-grid">
@@ -148,6 +151,7 @@
             </div>
         </div>
 
+        <!-- BOX LOGIN -->
         <div id="view-login" class="login-box">
             <h2>Login Portal</h2>
             <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Gunakan NIP (Pegawai) atau Username (Admin) untuk Masuk.</p>
@@ -161,6 +165,7 @@
             <p id="pesan-error" style="color: red; display: none; text-align: center; font-size: 0.9rem; margin-top: 15px;"></p>
         </div>
 
+        <!-- PORTAL ADMIN -->
         <div id="view-portal-admin" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu admin-mode">
@@ -171,6 +176,7 @@
                 </ul>
             </div>
             <div class="portal-viewport">
+                <!-- Tab Beranda Admin -->
                 <div id="tab-beranda-admin" class="panel tab-content-admin">
                     <h2 id="teks-sapaan-admin" style="color: #6f42c1; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-wilayah-admin" style="margin-top: 0; color: var(--text-main); font-weight: normal;">-</h3>
@@ -225,66 +231,81 @@
                     </div>
                 </div>
 
+                <!-- Tab Pantau Progres -->
                 <div id="tab-progres-update" class="panel tab-content-admin" style="display: none;">
                     <h2 style="color: #6f42c1; border-bottom: 2px solid #eee; padding-bottom: 10px;">Pantau Progres Pemutakhiran Data</h2>
                     <p style="color: var(--text-muted); margin-bottom: 20px;">Menampilkan rekapitulasi capaian pemutakhiran profil pegawai berdasarkan sub-wilayah pengawasan Anda.</p>
-    
+                    
                     <div class="table-responsive">
-                    <table id="tabel-admin-progres" style="min-width: 700px;">
-                    <thead>
-                    <tr>
-                    <th style="width: 50px;">No</th>
-                    <th id="header-progres-wilayah">Sub-Wilayah</th>
-                    <th style="text-align:center;">Total Pegawai</th>
-                    <th style="text-align:center;">Sudah Update</th>
-                    <th style="text-align:center;">Belum Update</th>
-                    <th style="text-align:center; min-width: 150px;">Capaian</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                    </table>
+                        <table id="tabel-admin-progres" style="min-width: 700px;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">No</th>
+                                    <th id="header-progres-wilayah">Sub-Wilayah</th>
+                                    <th style="text-align:center;">Total Pegawai</th>
+                                    <th style="text-align:center;">Sudah Update</th>
+                                    <th style="text-align:center;">Belum Update</th>
+                                    <th style="text-align:center; min-width: 150px;">Capaian</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data progres akan dirender secara dinamis di sini -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                
-                
+
+                <!-- Tab Daftar Pegawai -->
                 <div id="tab-daftar-pegawai" class="panel tab-content-admin" style="display: none;">
-    <h2 style="color: #6f42c1; border-bottom: 2px solid #eee; padding-bottom: 10px;">Manajemen Daftar Pegawai</h2>
-    
-    <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; border: 1px solid var(--border-color);">
-        <div style="flex: 1; min-width: 200px;">
-            <label class="form-label" style="margin-bottom: 5px;">Cakupan Wilayah:</label>
-            <select id="filter-dp-wilayah" style="margin: 0; background: var(--bg-card);">
-                <option value="">-- Semua Wilayah --</option>
-            </select>
-        </div>
-        <div style="flex: 1; min-width: 200px;">
-            <label class="form-label" style="margin-bottom: 5px;">Status Data:</label>
-            <select id="filter-dp-status" style="margin: 0; background: var(--bg-card);">
-                <option value="semua">Semua Status</option>
-                <option value="sudah">Sudah Update (Mutakhir)</option>
-                <option value="belum">Belum Update</option>
-            </select>
-        </div>
-        <div style="display: flex; align-items: flex-end;">
-            <button class="btn-primary" style="margin: 0; background-color: #6f42c1; width: auto; padding: 10px 20px;" onclick="terapkanFilterDaftarPegawai()">Terapkan Filter</button>
-        </div>
-    </div>
+                    <h2 style="color: #6f42c1; border-bottom: 2px solid #eee; padding-bottom: 10px;">Manajemen Daftar Pegawai</h2>
+                    
+                    <!-- Filter Mandiri Khusus Daftar Pegawai -->
+                    <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; border: 1px solid var(--border-color);">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label class="form-label" style="margin-bottom: 5px;">Cakupan Wilayah:</label>
+                            <select id="filter-dp-wilayah" style="margin: 0; background: var(--bg-card);">
+                                <option value="">-- Semua Wilayah --</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label class="form-label" style="margin-bottom: 5px;">Status Data:</label>
+                            <select id="filter-dp-status" style="margin: 0; background: var(--bg-card);">
+                                <option value="semua">Semua Status</option>
+                                <option value="sudah">Sudah Update (Mutakhir)</option>
+                                <option value="belum">Belum Update</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button class="btn-primary" style="margin: 0; background-color: #6f42c1; width: auto; padding: 10px 20px;" onclick="terapkanFilterDaftarPegawai()">Terapkan Filter</button>
+                        </div>
+                    </div>
 
-    <div class="table-responsive" style="max-height: 500px;">
-        <table id="tabel-admin-pegawai">
-            <thead><tr><th>NIP</th><th>Nama Lengkap</th><th>Wilayah</th><th>Jabatan</th><th>Status Data</th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
+                    <div class="table-responsive" style="max-height: 500px;">
+                        <table id="tabel-admin-pegawai">
+                            <thead><tr><th>NIP</th><th>Nama Lengkap</th><th>Wilayah</th><th>Jabatan</th><th>Status Data</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-        <button id="btn-prev-page" class="btn-primary" style="width: auto; margin: 0; background-color: #6c757d;" onclick="gantiHalamanDP(-1)" disabled>&#8592; Sebelumnya</button>
-        <span id="label-halaman-dp" style="font-weight: bold; color: #6f42c1;">Halaman 1</span>
-        <button id="btn-next-page" class="btn-primary" style="width: auto; margin: 0; background-color: #007bff;" onclick="gantiHalamanDP(1)" disabled>Selanjutnya &#8594;</button>
-    </div>
-</div>
+                    <!-- Navigasi Paginasi Halaman -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                        <button id="btn-prev-page" class="btn-primary" style="width: auto; margin: 0; background-color: #6c757d;" onclick="gantiHalamanDP(-1)" disabled>&#8592; Sebelumnya</button>
+                        <span id="label-halaman-dp" style="font-weight: bold; color: #6f42c1;">Halaman 1</span>
+                        <button id="btn-next-page" class="btn-primary" style="width: auto; margin: 0; background-color: #007bff;" onclick="gantiHalamanDP(1)" disabled>Selanjutnya &#8594;</button>
+                    </div>
+                </div>
 
+                <!-- Tab Ekspor Data -->
+                <div id="tab-ekspor-data" class="panel tab-content-admin" style="display: none;">
+                    <h2 style="color: #6f42c1;">Pusat Unduhan (Ekspor Data)</h2>
+                    <div class="form-section" id="wadah-ekspor-data">
+                        <!-- Konten akan di-generate oleh JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PORTAL PEGAWAI (USER) -->
         <div id="view-portal-pkb" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu">
