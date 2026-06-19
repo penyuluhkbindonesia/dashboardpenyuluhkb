@@ -195,6 +195,7 @@ window.terapkanFilterAdmin = function(targetLevel, targetWilayah) {
     
     muatBerandaAdmin(targetLevel, targetWilayah);
     muatDataAdmin(targetLevel, targetWilayah);
+    muatProgresAdmin(targetLevel, targetWilayah); // Trigger Progres
 };
 
 window.resetFilterAdmin = function() {
@@ -205,6 +206,7 @@ window.resetFilterAdmin = function() {
     
     muatBerandaAdmin(window.adminOriginal.level, window.adminOriginal.wilayah);
     muatDataAdmin(window.adminOriginal.level, window.adminOriginal.wilayah);
+    muatProgresAdmin(window.adminOriginal.level, window.adminOriginal.wilayah); // Trigger Progres
 };
 
 async function muatBerandaAdmin(level, wilayah) {
@@ -323,7 +325,6 @@ async function pulihkanSesi(data) {
         setTxt('header-title', `Portal Admin: ${data.wilayah_akses} (${data.level_admin})`);
         setTxt('teks-sapaan-admin', `Selamat Datang, ${data.nama_lengkap}`);
         
-        // PERBAIKAN: Redaksi Teks Kewenangan Akses
         setTxt('teks-wilayah-admin', `Kewenangan Akses : Wilayah ${data.wilayah_akses}`);
         
         window.adminOriginal = { level: data.level_admin, wilayah: data.wilayah_akses };
@@ -331,6 +332,7 @@ async function pulihkanSesi(data) {
         
         muatBerandaAdmin(window.adminCurrent.level, window.adminCurrent.wilayah);
         muatDataAdmin(window.adminCurrent.level, window.adminCurrent.wilayah);
+        muatProgresAdmin(window.adminCurrent.level, window.adminCurrent.wilayah); // Trigger Progres
 
         if(vadmin) vadmin.style.display = 'grid';
         const tabTerakhir = localStorage.getItem('activeTabAdmin') || 'beranda-admin'; 
@@ -585,69 +587,117 @@ window.ubahTemaAplikasi = function(theme) { document.documentElement.setAttribut
 window.ubahSkalaZoom = function(aksi) { if (aksi === '+') currentZoomLevel += 10; else if (aksi === '-') currentZoomLevel -= 10; else currentZoomLevel = 100; if (currentZoomLevel < 80) currentZoomLevel = 80; if (currentZoomLevel > 130) currentZoomLevel = 130; document.documentElement.style.setProperty('--base-font-size', `${currentZoomLevel}%`); };
 
 // ==========================================================================
-// 7. FUNGSI KHUSUS ADMIN (TABEL REKAP & EXPORT EXCEL/PDF/CSV)
+// 7. FUNGSI KHUSUS ADMIN (TABEL REKAP, PROGRES & EXPORT EXCEL/PDF/CSV)
 // ==========================================================================
 window.dataPegawaiAdmin = []; 
 window.wilayahAdminAktif = '';
 
-async function muatDataAdmin(level, wilayah) {
-    window.wilayahAdminAktif = wilayah;
-    
-    const thead = document.querySelector('#tabel-admin-pegawai thead');
-    const tbody = document.querySelector('#tabel-admin-pegawai tbody');
+// FUNGSI BARU: Memuat Tabel Pantau Progres Update
+async function muatProgresAdmin(level, wilayah) {
+    const tbody = document.querySelector('#tabel-admin-progres tbody');
+    const thWilayah = document.getElementById('header-progres-wilayah');
+    if(!tbody) return;
 
-    if (level === 'Nasional') {
-        const { data, error } = await mySupabase.rpc('get_rekap_pusat');
-        if (!error && data) {
-            let htmlTable = '';
-            let optionsProv = '<option value="">-- Pilih Provinsi --</option>';
+    if (level === 'Nasional') thWilayah.innerText = 'Nama Provinsi';
+    else if (level === 'Provinsi') thWilayah.innerText = 'Kabupaten/Kota';
+    else if (level === 'Kabupaten/Kota') thWilayah.innerText = 'Kecamatan Binaan';
+    else thWilayah.innerText = 'Sub-Wilayah';
 
-            if(thead) thead.innerHTML = `<tr><th>No</th><th>Nama Provinsi</th><th style="text-align:center;">Total Pegawai</th><th style="text-align:center;">Sudah Update</th><th style="text-align:center;">Belum Update</th><th style="text-align:center;">Capaian</th></tr>`;
-            
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Memuat data rekapitulasi progres...</td></tr>';
+
+    if (level === 'Kecamatan') {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color: var(--text-muted);">Cakupan Anda sudah berada di tingkat Kecamatan. Silakan buka menu <b>Daftar Pegawai</b> untuk melihat detail individu.</td></tr>';
+        return;
+    }
+
+    try {
+        const { data, error } = await mySupabase.rpc('get_progres_wilayah', { p_level: level, p_wilayah: wilayah });
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            let htmlContent = '';
             data.forEach((row, i) => {
-                let warna = row.persentase >= 80 ? '#28a745' : (row.persentase >= 50 ? '#ffc107' : '#dc3545');
-                htmlTable += `<tr>
+                let persen = row.persentase || 0;
+                let barColor = persen >= 80 ? '#28a745' : (persen >= 50 ? '#ffc107' : '#dc3545');
+                
+                htmlContent += `
+                <tr>
                     <td>${i+1}</td>
                     <td style="font-weight:bold; color:#0056b3;">${row.nama_wilayah}</td>
                     <td style="text-align:center;">${formatAngka(row.total_pegawai)}</td>
-                    <td style="text-align:center; color:#28a745;">${formatAngka(row.sudah_update)}</td>
-                    <td style="text-align:center; color:#dc3545;">${formatAngka(row.belum_update)}</td>
-                    <td style="text-align:center;"><span style="background:${warna}; color:white; padding:3px 8px; border-radius:4px; font-weight:bold;">${row.persentase}%</span></td>
+                    <td style="text-align:center; color:#28a745; font-weight:bold;">${formatAngka(row.sudah_update)}</td>
+                    <td style="text-align:center; color:#dc3545; font-weight:bold;">${formatAngka(row.belum_update)}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                            <span style="width:45px; text-align:right; font-weight:bold; color:${barColor};">${persen}%</span>
+                            <div style="width: 100px; height: 8px; background:#e9ecef; border-radius:4px; overflow:hidden;">
+                                <div style="width: ${persen}%; height: 100%; background:${barColor};"></div>
+                            </div>
+                        </div>
+                    </td>
                 </tr>`;
-                optionsProv += `<option value="${row.nama_wilayah}">${row.nama_wilayah}</option>`;
             });
+            tbody.innerHTML = htmlContent;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada data rekapitulasi di wilayah ini.</td></tr>';
+        }
+    } catch (e) {
+        console.error("DIAGNOSA ERROR PROGRES:", e);
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Gagal menarik data progres dari peladen.</td></tr>';
+    }
+}
+
+// FUNGSI UPDATE: Memuat Tabel Daftar Pegawai (Limit 100 baris per tarikan)
+async function muatDataAdmin(level, wilayah) {
+    window.wilayahAdminAktif = wilayah;
+    const tbody = document.querySelector('#tabel-admin-pegawai tbody');
+
+    if(tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat daftar pegawai...</td></tr>';
+
+    try {
+        let rpcData;
+        if (level === 'Nasional') {
+            const { data, error } = await mySupabase.from('data_aktif_pkb')
+                .select('nip, nama_lengkap, provinsi, kabupaten, jabatan, status_perkawinan')
+                .limit(100);
+            if (!error) rpcData = data;
             
-            if(tbody) tbody.innerHTML = htmlTable.length ? htmlTable : '<tr><td colspan="6" style="text-align:center;">Tidak ada data rekapitulasi.</td></tr>';
+            const { data: provData } = await mySupabase.from('referensi_wilayah').select('nama').eq('level_wilayah', 'Provinsi').order('nama');
+            let optionsProv = '<option value="">-- Pilih Provinsi --</option>';
+            if(provData) provData.forEach(r => optionsProv += `<option value="${r.nama}">${r.nama}</option>`);
             siapkanUIExportPusat(optionsProv);
         } else {
-            if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Gagal memuat rekapitulasi. Pastikan fungsi SQL get_rekap_pusat sudah dibuat.</td></tr>';
-        }
-    } else {
-        const { data, error } = await mySupabase.rpc('get_data_admin', { p_level: level, p_wilayah: wilayah });
-        if (!error && data) {
-            window.dataPegawaiAdmin = data.pegawai || [];
-            
-            if(thead) thead.innerHTML = `<tr><th>NIP</th><th>Nama Lengkap</th><th>Kabupaten/Kota</th><th>Jabatan</th><th>Status Data</th></tr>`;
-            
-            if(tbody) {
-                if(window.dataPegawaiAdmin.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data pegawai di wilayah ini.</td></tr>';
-                } else {
-                    let htmlContent = '';
-                    let batasTampil = Math.min(window.dataPegawaiAdmin.length, 100);
-                    for(let i=0; i<batasTampil; i++){
-                        let p = window.dataPegawaiAdmin[i];
-                        let badgeStatus = p.status_update ? '<span style="color:#28a745; font-weight:bold;">✓ Sudah Update</span>' : '<span style="color:#dc3545; font-weight:bold;">✗ Belum Update</span>';
-                        htmlContent += `<tr><td>${p.nip}</td><td style="font-weight:bold; color:#0056b3;">${p.nama_lengkap}</td><td>${p.kabupaten}</td><td>${p.jabatan}</td><td>${badgeStatus}</td></tr>`;
-                    }
-                    if(window.dataPegawaiAdmin.length > 100) {
-                        htmlContent += `<tr><td colspan="5" style="text-align:center; padding:15px; background:#f8f9fa;"><i>Menampilkan 100 baris pertama. Gunakan menu Ekspor untuk melihat seluruh <b>${formatAngka(window.dataPegawaiAdmin.length)}</b> data.</i></td></tr>`;
-                    }
-                    tbody.innerHTML = htmlContent;
-                }
+            const { data, error } = await mySupabase.rpc('get_data_admin', { p_level: level, p_wilayah: wilayah });
+            if (!error && data) {
+                rpcData = data.pegawai || data; 
+                window.dataPegawaiAdmin = rpcData; 
             }
             siapkanUIExportDaerah();
         }
+
+        if (rpcData && rpcData.length > 0) {
+            let htmlContent = '';
+            let batasTampil = Math.min(rpcData.length, 100); 
+            
+            for(let i = 0; i < batasTampil; i++){
+                let p = rpcData[i];
+                let isUpdated = p.status_update !== undefined ? p.status_update : (p.status_perkawinan ? true : false);
+                let badgeStatus = isUpdated ? '<span style="color:#28a745; font-weight:bold;">✓ Sudah Update</span>' : '<span style="color:#dc3545; font-weight:bold;">✗ Belum Update</span>';
+                let lokasi = level === 'Nasional' ? p.provinsi : p.kabupaten;
+                
+                htmlContent += `<tr><td>${p.nip}</td><td style="font-weight:bold; color:#0056b3;">${p.nama_lengkap}</td><td>${lokasi}</td><td>${p.jabatan}</td><td>${badgeStatus}</td></tr>`;
+            }
+            
+            if (rpcData.length >= 100 || level === 'Nasional') {
+                htmlContent += `<tr><td colspan="5" style="text-align:center; padding:15px; background:#f8f9fa;"><i>Menampilkan sampel 100 data. Silakan gunakan kartu <b>Filter Wilayah</b> (drill-down) di Beranda atau buka menu <b>Ekspor Data</b> untuk melihat seluruh daftar.</i></td></tr>`;
+            }
+            if(tbody) tbody.innerHTML = htmlContent;
+        } else {
+            if(tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data pegawai yang cocok.</td></tr>';
+        }
+    } catch (e) {
+        console.error(e);
+        if(tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal menarik data pegawai.</td></tr>';
     }
 }
 
