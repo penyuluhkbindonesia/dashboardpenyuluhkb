@@ -82,10 +82,6 @@
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-top: 5px; margin-bottom: 15px; }
         .checkbox-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.95rem; }
         .hidden-field { display: none; margin-left: 20px; border-left: 3px solid #17a2b8; padding-left: 15px; margin-bottom: 15px; background: var(--bg-primary); padding-top: 10px; padding-bottom: 1px; border-radius: 0 4px 4px 0; }
-        .kolom-filter { background: var(--bg-primary); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); height: fit-content; }
-        .daftar-item-klik { list-style: none; padding: 0; margin: 0; }
-        .daftar-item-klik li { padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; color: #0056b3; font-weight: 500; font-size: 0.95rem; }
-        .daftar-item-klik li:hover { text-decoration: underline; background: rgba(0,86,179,0.05); }
         
         .table-responsive { overflow-x: auto; max-height: 500px; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; font-size: 0.95rem; color: var(--text-main); min-width: 600px; }
@@ -94,9 +90,6 @@
         
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; display: none; justify-content: center; align-items: center; }
         .modal-card { background: var(--bg-card); padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.3); position: relative; }
-        .log-item { border-left: 3px solid #007bff; padding-left: 15px; margin-bottom: 15px; }
-        .log-date { font-weight: bold; color: #0056b3; font-size: 0.9rem; }
-        .log-changes { color: var(--text-main); font-size: 0.95rem; margin-top: 5px; }
         
         #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #0056b3; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; }
@@ -160,7 +153,7 @@
                     <li class="tab-link-admin active" onclick="pindahTabAdmin('beranda-admin')">Beranda Admin</li>
                     <li class="tab-link-admin" onclick="pindahTabAdmin('progres-update')">Pantau Progres</li>
                     <li class="tab-link-admin" onclick="pindahTabAdmin('daftar-pegawai')">Daftar Pegawai</li>
-                    <li class="tab-link-admin" onclick="pindahTabAdmin('ekspor-data')">Ekspor Data</li>
+                    <li class="tab-link-admin" onclick="pindahTabAdmin('approval-data')">Approval</li>
                 </ul>
             </div>
             <div class="portal-viewport">
@@ -224,10 +217,16 @@
                     
                     <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: space-between; border: 1px solid var(--border-color);">
                         <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
-                            <div style="min-width: 200px;">
-                                <label class="form-label" style="margin-bottom: 5px;">Filter Wilayah:</label>
-                                <select id="filter-pp-wilayah" style="margin: 0; background: var(--bg-card);">
-                                    <option value="">-- Semua Wilayah --</option>
+                            <div style="min-width: 180px;" id="wrap-pp-prov">
+                                <label class="form-label" style="margin-bottom: 5px;">Provinsi:</label>
+                                <select id="filter-pp-prov" style="margin: 0; background: var(--bg-card);" onchange="onProvChangePP()">
+                                    <option value="">-- Semua Provinsi --</option>
+                                </select>
+                            </div>
+                            <div style="min-width: 180px; display: none;" id="wrap-pp-kab">
+                                <label class="form-label" style="margin-bottom: 5px;">Kabupaten/Kota:</label>
+                                <select id="filter-pp-kab" style="margin: 0; background: var(--bg-card);">
+                                    <option value="">-- Semua Kabupaten/Kota --</option>
                                 </select>
                             </div>
                             <button class="btn-primary" style="margin: 0; background-color: #6f42c1; width: auto; padding: 10px 20px;" onclick="terapkanFilterPantauProgres()">Filter</button>
@@ -244,15 +243,14 @@
                             <thead>
                                 <tr>
                                     <th style="width: 50px;">No</th>
-                                    <th id="header-progres-wilayah">Sub-Wilayah</th>
+                                    <th id="header-progres-wilayah">Nama Provinsi</th>
                                     <th style="text-align:center;">Total Pegawai</th>
                                     <th style="text-align:center;">Sudah Update</th>
                                     <th style="text-align:center;">Belum Update</th>
                                     <th style="text-align:center; min-width: 150px;">Capaian</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
@@ -262,17 +260,23 @@
                     
                     <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: space-between; border: 1px solid var(--border-color);">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
-                            <div style="min-width: 180px;">
-                                <label class="form-label" style="margin-bottom: 5px;">Cakupan Wilayah:</label>
-                                <select id="filter-dp-wilayah" style="margin: 0; background: var(--bg-card);">
-                                    <option value="">-- Semua Wilayah --</option>
+                            <div style="min-width: 180px;" id="wrap-dp-prov">
+                                <label class="form-label" style="margin-bottom: 5px;">Provinsi:</label>
+                                <select id="filter-dp-prov" style="margin: 0; background: var(--bg-card);" onchange="onProvChangeDP()">
+                                    <option value="">-- Semua Provinsi --</option>
+                                </select>
+                            </div>
+                            <div style="min-width: 180px; display: none;" id="wrap-dp-kab">
+                                <label class="form-label" style="margin-bottom: 5px;">Kabupaten/Kota:</label>
+                                <select id="filter-dp-kab" style="margin: 0; background: var(--bg-card);">
+                                    <option value="">-- Semua Kabupaten/Kota --</option>
                                 </select>
                             </div>
                             <div style="min-width: 180px;">
                                 <label class="form-label" style="margin-bottom: 5px;">Status Data:</label>
                                 <select id="filter-dp-status" style="margin: 0; background: var(--bg-card);">
                                     <option value="semua">Semua Status</option>
-                                    <option value="sudah">Sudah Update (Mutakhir)</option>
+                                    <option value="sudah">Sudah Update</option>
                                     <option value="belum">Belum Update</option>
                                 </select>
                             </div>
@@ -295,6 +299,7 @@
                                     <th>Kabupaten/Kota</th>
                                     <th>Kecamatan</th>
                                     <th>Jabatan</th>
+                                    <th>Total Wilbin</th>
                                     <th>Status Data</th>
                                 </tr>
                             </thead>
@@ -309,10 +314,28 @@
                     </div>
                 </div>
 
-                <div id="tab-ekspor-data" class="panel tab-content-admin" style="display: none;">
-                    <h2 style="color: #6f42c1;">Pusat Unduhan (Ekspor Data)</h2>
-                    <div class="form-section" id="wadah-ekspor-data">
+                <div id="tab-approval-data" class="panel tab-content-admin" style="display: none;">
+                    <h2 style="color: #6f42c1;">Approval & Validasi Data</h2>
+                    <div class="form-section">
+                        <h3>Usulan Penonaktifan Pegawai</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Daftar pengajuan penonaktifan profil PKB/PLKB (karena pensiun, mutasi, dll) yang memerlukan persetujuan dan validasi Anda.</p>
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0 text-center" style="width:100%; border-collapse:collapse;">
+                                <thead style="background:#f8f9fa;">
+                                    <tr>
+                                        <th style="padding:10px; border:1px solid #dee2e6;">Tgl Usulan</th>
+                                        <th style="padding:10px; border:1px solid #dee2e6;">NIP & Nama</th>
+                                        <th style="padding:10px; border:1px solid #dee2e6;">Wilayah Asal</th>
+                                        <th style="padding:10px; border:1px solid #dee2e6;">Alasan</th>
+                                        <th style="padding:10px; border:1px solid #dee2e6;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="5" style="padding:20px; color:#6c757d; text-align:center;">Saat ini belum ada usulan penonaktifan di wilayah Anda.</td></tr>
+                                </tbody>
+                            </table>
                         </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -328,7 +351,6 @@
                     <li class="tab-link" onclick="pindahTabPortal('pengaturan')">Pengaturan</li>
                 </ul>
             </div>
-
             <div class="portal-viewport">
                 <div id="tab-beranda" class="panel tab-content">
                     <h2 id="teks-sapaan" style="color: #0056b3; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
@@ -585,7 +607,7 @@
     </div>
 </div>
 
-<div class="footer">PenyuluhKB&copy;2026</div>
+<div class="footer">Dashboard PenyuluhKB-2026</div>
 <script src="app.js"></script>
 </body>
 </html>
