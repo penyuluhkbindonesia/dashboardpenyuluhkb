@@ -249,29 +249,41 @@
                 
                 
                 <div id="tab-daftar-pegawai" class="panel tab-content-admin" style="display: none;">
-                    <h2 style="color: #6f42c1; border-bottom: 2px solid #eee; padding-bottom: 10px;">Manajemen Daftar Pegawai</h2>
-                    <div class="table-responsive" style="max-height: 500px;">
-                        <table id="tabel-admin-pegawai">
-                            <thead><tr><th>NIP</th><th>Nama Lengkap</th><th>Kabupaten/Kota</th><th>Jabatan</th><th>Status Data</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="tab-ekspor-data" class="panel tab-content-admin" style="display: none;">
-                    <h2 style="color: #6f42c1;">Pusat Unduhan (Ekspor Data)</h2>
-                    <div class="form-section">
-                        <h3>Tarik Data Lengkap Wilayah</h3>
-                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Unduh seluruh data pegawai di wilayah Anda yang mencakup nama, NIP, jabatan, dan status pembaruan profil saat ini dalam berbagai format pelaporan.</p>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button class="btn-primary" style="width: auto; background-color: #28a745; padding: 12px 20px;" onclick="unduhDataAdminExcel()">📊 Unduh Excel (.XLSX)</button>
-                            <button class="btn-primary" style="width: auto; background-color: #dc3545; padding: 12px 20px;" onclick="unduhDataAdminPDF()">📄 Unduh PDF (.PDF)</button>
-                            <button class="btn-primary" style="width: auto; background-color: #17a2b8; padding: 12px 20px;" onclick="unduhDataAdminCSV()">📝 Unduh Data (.CSV)</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <h2 style="color: #6f42c1; border-bottom: 2px solid #eee; padding-bottom: 10px;">Manajemen Daftar Pegawai</h2>
+    
+    <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; border: 1px solid var(--border-color);">
+        <div style="flex: 1; min-width: 200px;">
+            <label class="form-label" style="margin-bottom: 5px;">Cakupan Wilayah:</label>
+            <select id="filter-dp-wilayah" style="margin: 0; background: var(--bg-card);">
+                <option value="">-- Semua Wilayah --</option>
+            </select>
         </div>
+        <div style="flex: 1; min-width: 200px;">
+            <label class="form-label" style="margin-bottom: 5px;">Status Data:</label>
+            <select id="filter-dp-status" style="margin: 0; background: var(--bg-card);">
+                <option value="semua">Semua Status</option>
+                <option value="sudah">Sudah Update (Mutakhir)</option>
+                <option value="belum">Belum Update</option>
+            </select>
+        </div>
+        <div style="display: flex; align-items: flex-end;">
+            <button class="btn-primary" style="margin: 0; background-color: #6f42c1; width: auto; padding: 10px 20px;" onclick="terapkanFilterDaftarPegawai()">Terapkan Filter</button>
+        </div>
+    </div>
+
+    <div class="table-responsive" style="max-height: 500px;">
+        <table id="tabel-admin-pegawai">
+            <thead><tr><th>NIP</th><th>Nama Lengkap</th><th>Wilayah</th><th>Jabatan</th><th>Status Data</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+        <button id="btn-prev-page" class="btn-primary" style="width: auto; margin: 0; background-color: #6c757d;" onclick="gantiHalamanDP(-1)" disabled>&#8592; Sebelumnya</button>
+        <span id="label-halaman-dp" style="font-weight: bold; color: #6f42c1;">Halaman 1</span>
+        <button id="btn-next-page" class="btn-primary" style="width: auto; margin: 0; background-color: #007bff;" onclick="gantiHalamanDP(1)" disabled>Selanjutnya &#8594;</button>
+    </div>
+</div>
 
         <div id="view-portal-pkb" class="portal-layout">
             <div class="sidebar">
