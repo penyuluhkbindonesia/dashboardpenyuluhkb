@@ -60,11 +60,11 @@
         
         /* PENGATURAN GRID UTAMA */
         .portal-layout { display: none; grid-template-columns: 220px 1fr; gap: 20px; width: 100%; }
-        .portal-viewport { width: 100%; min-width: 0; overflow-x: hidden; } /* Anti blowout */
+        .portal-viewport { width: 100%; min-width: 0; overflow-x: hidden; } 
         
-        /* FIX MUTLAK UNTUK MOBILE: MEMAKSA GRID 1 KOLOM */
+        /* FIX MUTLAK UNTUK MOBILE: MENGHAPUS 'display: grid !important' AGAR JS TETAP BERKUASA */
         @media (max-width: 768px) { 
-            .portal-layout { grid-template-columns: 1fr !important; display: grid !important; gap: 10px; } 
+            .portal-layout { grid-template-columns: 1fr !important; gap: 10px; } 
             .sidebar { position: static !important; z-index: 1; margin-bottom: 5px; padding: 12px; }
             .sidebar-menu { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; justify-content: center; } 
             .sidebar-menu li { flex: 1 1 calc(50% - 8px); text-align: center; font-size: 0.9rem; padding: 10px; margin: 0; }
@@ -122,6 +122,7 @@
     </div>
 
     <div class="container">
+        <!-- DASBOR PUBLIK -->
         <div id="view-dasbor-publik">
             <div class="cakupan-status"><h2 id="label-cakupan">Data PKB/PLKB : NASIONAL</h2><button id="btn-reset-filter" class="btn-reset" onclick="resetFilter()">Tampilkan Nasional</button></div>
             <div class="kpi-grid">
@@ -143,6 +144,7 @@
             </div>
         </div>
 
+        <!-- BOX LOGIN -->
         <div id="view-login" class="login-box">
             <h2>Login Portal</h2>
             <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Gunakan NIP (Pegawai) atau Username (Admin) untuk Masuk.</p>
@@ -156,6 +158,7 @@
             <p id="pesan-error" style="color: red; display: none; text-align: center; font-size: 0.9rem; margin-top: 15px;"></p>
         </div>
 
+        <!-- PORTAL ADMIN -->
         <div id="view-portal-admin" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu admin-mode">
@@ -166,6 +169,7 @@
                 </ul>
             </div>
             <div class="portal-viewport">
+                <!-- Tab Beranda Admin -->
                 <div id="tab-beranda-admin" class="panel tab-content-admin">
                     <h2 id="teks-sapaan-admin" style="color: #6f42c1; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-wilayah-admin" style="margin-top: 0; color: var(--text-main); font-weight: normal;">-</h3>
@@ -220,6 +224,7 @@
                     </div>
                 </div>
 
+                <!-- Tab Pantau Progres -->
                 <div id="tab-progres-update" class="panel tab-content-admin" style="display: none;">
                     <h2 style="color: #6f42c1; border-bottom: 2px solid #eee; padding-bottom: 10px;">Pantau Progres Pemutakhiran Data</h2>
                     <p style="color: var(--text-muted); margin-bottom: 20px;">Menampilkan rekapitulasi capaian pemutakhiran profil pegawai berdasarkan sub-wilayah pengawasan Anda.</p>
@@ -264,6 +269,7 @@
                     </div>
                 </div>
 
+                <!-- Tab Daftar Pegawai -->
                 <div id="tab-daftar-pegawai" class="panel tab-content-admin" style="display: none;">
                     <h2 style="color: #6f42c1; border-bottom: 2px solid #eee; padding-bottom: 10px;">Manajemen Daftar Pegawai</h2>
                     
@@ -323,6 +329,7 @@
                     </div>
                 </div>
 
+                <!-- Tab Approval Data Baru -->
                 <div id="tab-approval-data" class="panel tab-content-admin" style="display: none;">
                     <h2 style="color: #6f42c1;">Approval & Validasi Data</h2>
                     <div class="form-section">
@@ -349,6 +356,7 @@
             </div>
         </div>
 
+        <!-- PORTAL PEGAWAI (USER) -->
         <div id="view-portal-pkb" class="portal-layout">
             <div class="sidebar">
                 <ul class="sidebar-menu">
@@ -361,6 +369,7 @@
                 </ul>
             </div>
             <div class="portal-viewport">
+                <!-- Konten Pegawai ... -->
                 <div id="tab-beranda" class="panel tab-content">
                     <h2 id="teks-sapaan" style="color: #0056b3; font-size: 1.4rem; border-bottom: none; margin-bottom: 5px;">-</h2>
                     <h3 id="teks-sambutan" style="margin-top: 0; color: var(--text-main);">Selamat Datang di Portal PenyuluhKB Indonesia</h3>
